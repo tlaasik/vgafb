@@ -1,0 +1,8 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP 74HC4053
+D Triple analog mux (inh and vee pins are tied to gnd)
+K TTL
+$ENDCMP
+#
+#End Doc Library
