@@ -1,0 +1,96 @@
+#ifndef _VGAFB_CORE_H
+#define _VGAFB_CORE_H
+
+#include <Arduino.h>
+#include <SPI.h>
+
+// ===== configurable part ======
+
+// Commenting this in will configure 2 debug pins for ISR and SPI transaction timing measurements
+//#define VGAFB_DEBUG
+
+// Lower for slower SPI speeds, increase for higher speeds. 8 is good for 8MHz SPI clock
+#define VGAFB_MAX_SPI_TRANSACTION_BYTES		8
+#define VGAFB_MAX_SPI_TRANSACTION_WORDS		(VGAFB_MAX_SPI_TRANSACTION_BYTES / 2)
+
+// ===== /configurable part ======
+
+// TODO use better name
+// vgamode_t flags
+#define VGA_INVERTED_VSYNC	1
+#define VGA_INVERTED_HSYNC	2
+
+#define SET_PORT_PIN(port, pin_mask) (*(port) |= (pin_mask))
+#define CLR_PORT_PIN(port, pin_mask) (*(port) &= ~(pin_mask))
+
+// TODO these shouldn't be here?
+#define clkOut		3
+#define hSync		5
+#define vSync		10
+
+// TODO this MUST have the same value as U8X8_PIN_NONE. do smth about it
+#define VGAFB_PIN_NONE 255
+
+#ifdef VGAFB_DEBUG
+// TODO move these two pin numbers out from here?
+#define dbgPin		6
+#define dbgPinInt	2
+#define VGAFB_DEBUG_CLR(x,y) (x&=(~(1<<y)))
+#define VGAFB_DEBUG_SET(x,y) (x|=(1<<y))
+#else
+#define VGAFB_DEBUG_CLR(x,y)
+#define VGAFB_DEBUG_SET(x,y)
+#endif
+
+typedef struct {
+	uint16_t hVisible, hSyncStart, hSyncEnd, hTotal;
+	uint16_t vVisible, vSyncStart, vSyncEnd, vTotal;
+	uint8_t scanlineHeight; // vmemScaledStride = vmemStride * scanlineHeight
+	uint8_t flags;
+} vgamode_t;
+
+typedef struct {
+	vgamode_t mode;
+	
+	uint16_t vVisibleScaled;
+	uint16_t vmemPtr;
+	uint16_t vmemFirstPixelOffset;
+	uint16_t vmemLastPixelOffset; // where pixel is 1
+	uint16_t vmemStride; // must be /2 (for clearScanline)
+	uint16_t vmemScaledStride;
+	uint16_t vSyncTimerIncCount; // how many 8-pixel blocks (==TCNT1 steps) does one vsync pulse
+
+	uint8_t pxclk_mul, pxclk_div; // keep pxclk_div<=4 or there may be overflow in VgaFB_WaitAndStart
+	volatile uint8_t* ab_port;// = (volatile uint8_t*)&PORTB;
+	uint8_t ab_pin_mask;// = 0b00000010;
+	volatile uint8_t* cs_port;
+	uint8_t cs_pin_mask;
+
+	SPISettings sramSpiSettings;
+} vgafb_t;
+
+
+extern vgamode_t vgamode_640x480_75Hz_32MHz;
+extern vgamode_t vgamode_400x300_60Hz_20MHz;
+extern vgamode_t vgamode_320x240_75Hz_16MHz;
+extern vgamode_t vgamode_320x200_85Hz_16MHz;
+
+void VgaFB_StartTranscation(vgafb_t* vgafb);
+void VgaFB_EndTransaction(vgafb_t* vgafb);
+
+void VgaFB_ConfigBoard(vgafb_t* vgafb, uint8_t mul, uint8_t div, uint8_t cs_pin, uint8_t ab_pin);
+bool VgaFB_Begin(vgafb_t* vgafb, vgamode_t mode);
+void VgaFB_End(vgafb_t* vgafb);
+
+void VgaFB_Clear(vgafb_t* vgafb);
+
+// scanline vTotal (not scaled line vTotalScaled)
+// including lines in blanking area and offscreen (<0 and >vTotal)
+void VgaFB_ClearScanline(vgafb_t *vgafb, int16_t scanline);
+
+void VgaFB_Scroll(vgafb_t* vgafb, int16_t delta); // scanline
+
+void VgaFB_Write(vgafb_t* vgafb, uint16_t dst, uint8_t* buf, uint8_t cnt);
+void VgaFB_Read(vgafb_t* vgafb, uint16_t src, uint8_t* buf, uint8_t cnt);
+
+#endif
