@@ -11,10 +11,7 @@ Features:
 * (optional) generates pixel clock by multiplying MCU clock by 2x 2.5x 3x 4x or 5x
 * (optional) or generates pixel clock with own oscillator 20MHz 25MHz 30Mhz 40MHz 50MHz. MCU should use 
 
-Host MCU requirements:
-* one 8bit PWM for hsync driving hsync pin
-* one 16bit PWM for vsync driving vsync pin and generating interrupts
-* hardware SPI interface
+![Schematic and pcb pictures](https://raw.githubusercontent.com/tlaasik/vgafb/master/sch_pcb.jpg)
 
 Wiring to Arduino Nano 
 ```
