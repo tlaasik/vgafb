@@ -201,17 +201,10 @@ bool VgaFB_Begin(vgafb_t* vgafb, vgamode_t mode)
 	TIFR1 = _BV(TOV1);		// clear overflow flag
 	TIMSK1 = _BV(TOIE1);	// interrupt on Timer0 overflow
 
-	SREG = sreg; // restore interrupts if they were enabled
-	// critical block ends here. clkOut doesn't need to be in it, because it causes no interrupts
-
-	bool _enableClkOut = true; // TODO
-	if (_enableClkOut) {
-		// tmp 8MHz pixel clock
-		OCR2A = 0;
-		Timer2::setMode(2, Timer2::PRESCALE_1, Timer2::TOGGLE_B_ON_COMPARE); // CTC, TOP=OCR2A
-		pinMode(clkOut, OUTPUT);
-	}
 	cur_vgafb = vgafb;
+
+	SREG = sreg; // restore interrupts if they were enabled
+	// critical block ends here
 }
 
 
@@ -245,7 +238,7 @@ void VgaFB_Clear(vgafb_t* vgafb)
 
 // scanline vTotal (not scaled line vTotalScaled)
 // including lines in blanking area and offscreen (<0 and >vTotal)
-void VgaFB_ClearScanline(vgafb_t *vgafb, int16_t scanline)
+static void VgaFB_ClearScanline(vgafb_t *vgafb, int16_t scanline)
 {
 	scanline += vgafb->mode.vTotal - vgafb->mode.vSyncEnd;
 
@@ -267,7 +260,15 @@ void VgaFB_ClearScanline(vgafb_t *vgafb, int16_t scanline)
 	}
 }
 
-void VgaFB_Scroll(vgafb_t* vgafb, int16_t delta) // scanline
+void VgaFB_ClearLine(vgafb_t *vgafb, uint16_t line)
+{
+	uint8_t cnt = vgafb->mode.scanlineHeight;
+	uint16_t base = line * cnt;
+	while (cnt--)
+		VgaFB_ClearScanline(vgafb, base + cnt);
+}
+
+void VgaFB_Scroll(vgafb_t* vgafb, int16_t delta)
 {
 	delta *= vgafb->mode.scanlineHeight;
 

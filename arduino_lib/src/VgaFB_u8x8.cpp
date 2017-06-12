@@ -202,10 +202,11 @@ void U8X8_VGAFB::clearLine(uint8_t line) {
 	// can do better than u8x8_ClearLine(&u8x8, line)
 	if (line >= u8x8.display_info->tile_height)
 		return;
-	uint8_t cnt = vgafb.mode.scanlineHeight << 3; // tile height in scanlines
-	uint16_t base = line * cnt;
+
+	uint16_t base = line << 3;
+	uint8_t cnt = 8; // tile height in lines
 	while (cnt--)
-		VgaFB_ClearScanline(&vgafb, base + cnt);
+		VgaFB_ClearLine(&vgafb, base + cnt);
 }
 void U8X8_VGAFB::clearDisplay(void) {
 	// can do much better than u8x8_ClearDisplay(&u8x8)

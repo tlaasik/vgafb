@@ -31,7 +31,6 @@
 #define CLR_PORT_PIN(port, pin_mask) (*(port) &= ~(pin_mask))
 
 // TODO these shouldn't be here?
-#define clkOut		3
 #define hSync		5
 #define vSync		10
 
@@ -94,12 +93,9 @@ bool VgaFB_Begin(vgafb_t* vgafb, vgamode_t mode);
 void VgaFB_End(vgafb_t* vgafb);
 
 void VgaFB_Clear(vgafb_t* vgafb);
+void VgaFB_ClearLine(vgafb_t *vgafb, uint16_t line);
 
-// scanline vTotal (not scaled line vTotalScaled)
-// including lines in blanking area and offscreen (<0 and >vTotal)
-void VgaFB_ClearScanline(vgafb_t *vgafb, int16_t scanline);
-
-void VgaFB_Scroll(vgafb_t* vgafb, int16_t delta); // scanline
+void VgaFB_Scroll(vgafb_t* vgafb, int16_t delta);
 
 void VgaFB_Write(vgafb_t* vgafb, uint_vgafb_t dst, uint8_t* buf, uint8_t cnt);
 void VgaFB_Read(vgafb_t* vgafb, uint_vgafb_t src, uint8_t* buf, uint8_t cnt);
