@@ -2,18 +2,30 @@
 
 Minimalistic VGA framebuffer hardware and software for microcontrollers (right now only tested on Arduino Uno and Nano).
 
-Features:
+## Features
 * simple hardware (just 3x2:1 mux and 64KB SPI memory chip), but just enough to have low CPU utilization
 * has integraion with high level u8g2 and u8x8 API. These provide monochrome font and graphics rendering
 * supports 2 colors: black and a color selected by RGB jumper
-* up to 640x480 resolution (64KB address space, 1px per pixel)
+* up to 640x480 resolution (64KB address space, 1bit per pixel)
 * fast screen clear and fast vertical scrolling
 * (optional) generates pixel clock by multiplying MCU clock by 2x 2.5x 3x 4x or 5x
-* (optional) or generates pixel clock with own oscillator 20MHz 25MHz 30Mhz 40MHz 50MHz. MCU should use 
+* (optional) or generates pixel clock with own oscillator 20MHz 25MHz 30Mhz 40MHz 50MHz. MCU should use it
 
-![Schematic and pcb pictures](https://raw.githubusercontent.com/tlaasik/vgafb/master/sch_pcb.jpg)
+![Schematic and pcb pictures](sch_pcb.jpg)
 
-Wiring to Arduino Nano 
+## Usage
+1. Decide how to generate pixel clock, this may limit what resolutions are available. For example, Arduino may run at 16MHz and generate 8MHz that is fed into CLKIN. Then using 2.5x multiplier 20MHz pixel clock is generated suitable for 400x300@60Hz mode
+2. Wire this schematic together with your Arduino board or chip
+3. Download [arduino_lib/](arduino_lib/) and place the contents where your arduino libraries are (usually c:\Users\<username>3\Documents\Arduino\libraries\) or directly in your project folder
+4. See [arduino_lib/examples/TextOnScreen_8x2g.ino](arduino_lib/examples/TextOnScreen_8x2g.ino)
+
+List of modes supported (format tells screen width and height, refresh rate and required pixel clock)
+* vgamode_640x480_75Hz_32MHz
+* vgamode_400x300_60Hz_20MHz
+* vgamode_320x240_75Hz_16MHz
+* vgamode_320x200_85Hz_16MHz
+
+Wiring to Arduino Nano
 ```
 vgafb  ardu_nano
 -------------------------------------
@@ -36,7 +48,7 @@ PX     -       pixel clock out (without clock mult. chip it's pixel clock in)
 to hardware resources like PWM and SPI tied to specific pins.
 ```
 
-Example code:
+## Example code
 ```C
 #include <U8x8lib.h>
 #include <SPI.h>
@@ -64,7 +76,7 @@ void loop()
 }
 ```
 
-Low level C API (not safe, buf fast):
+## Low level C API (not safe, buf fast)
 ```C
 void VgaFB_ConfigBoard(vgafb_t * vgafb, uint8_t mul, uint8_t div, uint8_t cs_pin, uint8_t ab_pin);
 bool VgaFB_Begin(vgafb_t * vgafb, vgamode_t mode);
@@ -76,8 +88,8 @@ void VgaFB_Write(vgafb_t* vgafb, uint16_t dst, uint8_t* src, uint8_t cnt);
 void VgaFB_Read(vgafb_t* vgafb, uint16_t src, uint8_t* dst, uint8_t cnt);
 ```
 
-List of modes supported (format is tells screen width and hegiht, refresh rate and required pixel clock):
-* vgamode_640x480_75Hz_32MHz
-* vgamode_400x300_60Hz_20MHz
-* vgamode_320x240_75Hz_16MHz
-* vgamode_320x200_85Hz_16MHz
+## Pictures of it working
+
+![All together](vgafb_together.jpg)
+
+(used an old monitor, because it supported more refresh rates on low resolution than my more modern LCD)

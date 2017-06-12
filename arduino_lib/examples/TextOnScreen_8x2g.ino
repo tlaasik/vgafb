@@ -15,9 +15,9 @@ void loop()
   do {
     u8g2.setFont(u8g2_font_ncenB14_tr);
     u8g2.drawStr(0, 20, "VGA framebuffer for Arduino Nano");
-    u8g2.drawStr(300, 350, "Running at 640x480 85Hz");
+    u8g2.drawStr(200, 200, "Running at 400x300 60Hz");
     u8g2.setFont(u8g2_font_ncenB08_tr);
-    u8g2.drawStr(300, 380, "Using u8g2 for rendering text");
+    u8g2.drawStr(200, 230, "Using u8g2 for rendering text");
     u8g2.drawStr(0, 40, "https://github.com/tlaasik/vgafb");
     u8g2.drawFilledEllipse(100, 100, 90, 30);
   } while (u8g2.nextPage());
