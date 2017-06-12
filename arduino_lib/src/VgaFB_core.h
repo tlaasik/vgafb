@@ -13,7 +13,14 @@
 #define VGAFB_MAX_SPI_TRANSACTION_BYTES		8
 #define VGAFB_MAX_SPI_TRANSACTION_WORDS		(VGAFB_MAX_SPI_TRANSACTION_BYTES / 2)
 
+// Set it to how many address bytes memory chip needs. It's usually 2 or 3
+#define VGAFB_VRAM_ADDR_LENGTH 2
+
 // ===== /configurable part ======
+
+#if VGAFB_VRAM_ADDR_LENGTH != 2 && VGAFB_VRAM_ADDR_LENGTH != 3
+#error VGAFB_VRAM_ADDR_LENGTH must be 2 or 3
+#endif
 
 // TODO use better name
 // vgamode_t flags
@@ -42,6 +49,13 @@
 #define VGAFB_DEBUG_SET(x,y)
 #endif
 
+#if VGAFB_VRAM_ADDR_LENGTH <= 2
+#define uint_vgafb_t uint16_t
+#else
+#define uint_vgafb_t uint32_t
+#endif
+
+
 typedef struct {
 	uint16_t hVisible, hSyncStart, hSyncEnd, hTotal;
 	uint16_t vVisible, vSyncStart, vSyncEnd, vTotal;
@@ -53,9 +67,9 @@ typedef struct {
 	vgamode_t mode;
 	
 	uint16_t vVisibleScaled;
-	uint16_t vmemPtr;
-	uint16_t vmemFirstPixelOffset;
-	uint16_t vmemLastPixelOffset; // where pixel is 1
+	uint_vgafb_t vmemPtr;
+	uint_vgafb_t vmemFirstPixelOffset;
+	uint_vgafb_t vmemLastPixelOffset; // where pixel is 1
 	uint16_t vmemStride; // must be /2 (for clearScanline)
 	uint16_t vmemScaledStride;
 	uint16_t vSyncTimerIncCount; // how many 8-pixel blocks (==TCNT1 steps) does one vsync pulse
@@ -75,9 +89,6 @@ extern vgamode_t vgamode_400x300_60Hz_20MHz;
 extern vgamode_t vgamode_320x240_75Hz_16MHz;
 extern vgamode_t vgamode_320x200_85Hz_16MHz;
 
-void VgaFB_StartTranscation(vgafb_t* vgafb);
-void VgaFB_EndTransaction(vgafb_t* vgafb);
-
 void VgaFB_ConfigBoard(vgafb_t* vgafb, uint8_t mul, uint8_t div, uint8_t cs_pin, uint8_t ab_pin);
 bool VgaFB_Begin(vgafb_t* vgafb, vgamode_t mode);
 void VgaFB_End(vgafb_t* vgafb);
@@ -90,7 +101,7 @@ void VgaFB_ClearScanline(vgafb_t *vgafb, int16_t scanline);
 
 void VgaFB_Scroll(vgafb_t* vgafb, int16_t delta); // scanline
 
-void VgaFB_Write(vgafb_t* vgafb, uint16_t dst, uint8_t* buf, uint8_t cnt);
-void VgaFB_Read(vgafb_t* vgafb, uint16_t src, uint8_t* buf, uint8_t cnt);
+void VgaFB_Write(vgafb_t* vgafb, uint_vgafb_t dst, uint8_t* buf, uint8_t cnt);
+void VgaFB_Read(vgafb_t* vgafb, uint_vgafb_t src, uint8_t* buf, uint8_t cnt);
 
 #endif

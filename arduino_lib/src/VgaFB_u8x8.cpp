@@ -58,32 +58,6 @@ static uint8_t u8x8_d_vgafb_generic(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, 
 					}
 
 					VgaFB_Write(vgafb, pixelOffs, &d, 1);
-					//VgaFB_BlitAlignedBytes(vgafb, pixelOffs, &d, 1, 0, 0, BLIT_SET);
-					/*
-					k = vgafb->scanlineHeight;
-					while (k-- > 0)
-					{
-						if (d != 0 && pixelOffs > vgafb->vmemLastPixelOffset)
-							vgafb->vmemLastPixelOffset = pixelOffs;
-
-						////ramAddr = vmemPtr + pixelOffs;
-						//buf[0] = 0x02; // SRAM WRITE
-						//buf[1] = (byte)(ramAddr >> 8);
-						//buf[2] = (byte)ramAddr;
-						//buf[3] = d;
-						//u8x8_cad_StartTransfer(u8x8);
-						//u8x8_cad_SendData(u8x8, 4, buf); // buf is scrapped
-						//u8x8_cad_EndTransfer(u8x8);
-
-						VgaFB_StartTranscation(vgafb);
-						SPI.transfer(0x02); // WRITE
-						SPI.transfer16(vgafb->vmemPtr + pixelOffs);
-						SPI.transfer(d);
-						VgaFB_EndTransaction(vgafb);
-
-						pixelOffs += vgafb->vmemStride;
-					}*/
-
 				}
 			}
 		}
@@ -187,31 +161,15 @@ uint8_t u8x8_d_vgafb_400x300_60Hz_20MHz_generic(u8x8_t *u8x8, uint8_t msg, uint8
 // only works for ARDUINO >= 10600
 /*extern "C"*/ uint8_t u8x8_byte_arduino_vgafbbus(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, void *arg_ptr)
 {
-#ifdef U8X8_HAVE_HW_SPI
 	uint8_t *data;
 	//uint8_t internal_spi_mode;
 	uint16_t tcntValueBeforeWait;
 
 	vgafb_t* vgafb = VGAFB_UNHIDE_POINTER(u8x8);
 
+	// VgaFB uses only U8X8_MSG_BYTE_INIT, all transfers use VgaFB_Read or VgaFB_Write functions
 	switch (msg)
 	{
-	case U8X8_MSG_BYTE_SEND:
-		// 1.6.5 offers a block transfer, but the problem is, that the
-		// buffer is overwritten with the incoming data
-		// so it can not be used...
-		// SPI.transfer((uint8_t *)arg_ptr, arg_int);
-
-		SPI.transfer((uint8_t *)arg_ptr, arg_int);
-		/*data = (uint8_t *)arg_ptr;
-		while (arg_int > 0)
-		{
-		SPI.transfer((uint8_t)*data);
-		data++;
-		arg_int--;
-		}*/
-		break;
-
 	case U8X8_MSG_BYTE_INIT:
 		// disable chipselect
 		//u8x8_gpio_SetCS(u8x8, u8x8->display_info->chip_disable_level);
@@ -223,21 +181,9 @@ uint8_t u8x8_d_vgafb_400x300_60Hz_20MHz_generic(u8x8_t *u8x8, uint8_t msg, uint8
 
 		// setup hardware with SPI.begin() instead of digitalWrite() and pinMode() calls
 		SPI.begin();
-		break;
-
-	case U8X8_MSG_BYTE_START_TRANSFER:
-		VgaFB_StartTranscation(vgafb);
-		break;
-
-	case U8X8_MSG_BYTE_END_TRANSFER:
-		VgaFB_EndTransaction(vgafb);
-		break;
-	default:
-		return 0;
+		return 1;
 	}
-#else
-#endif
-	return 1;
+	return 0;
 }
 
 void u8x8_SetPin_VGAFBBUS(u8x8_t *u8x8, uint8_t mul, uint8_t div, uint8_t cs, uint8_t ab, uint8_t reset)
@@ -286,8 +232,6 @@ U8X8_VGAFB_400X300_60Hz_20MHz_GENERIC_VGAFBBUS::U8X8_VGAFB_400X300_60Hz_20MHz_GE
 	VGAFB_HIDE_POINTER(u8x8, vgafb);
 	u8x8_SetPin_VGAFBBUS(u8x8, mul, div, cs, a, reset);
 }
-
-// XXX ------- below this line is untested ----------
 
 void U8G2_VGAFB::clearDisplay(void) {
 	// can do much better than u8g2_ClearDisplay(&u8g2)

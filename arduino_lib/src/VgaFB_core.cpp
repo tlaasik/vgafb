@@ -48,7 +48,7 @@ static void VgaFB_WaitAndStart(vgafb_t* vgafb)
 	SPI.beginTransaction(vgafb->sramSpiSettings);
 }
 
-void VgaFB_StartTranscation(vgafb_t* vgafb)
+static void VgaFB_StartTranscation(vgafb_t* vgafb)
 {
 	// (need this later)
 	uint16_t tcntValueBeforeWait = TCNT1;
@@ -89,12 +89,21 @@ void VgaFB_StartTranscation(vgafb_t* vgafb)
 	CLR_PORT_PIN(vgafb->cs_port, vgafb->cs_pin_mask);
 }
 
-void VgaFB_EndTransaction(vgafb_t* vgafb)
+static void VgaFB_EndTransaction(vgafb_t* vgafb)
 {
 	// !cpu is way too slow for this, natural delay is enough! u8x8->gpio_and_delay_cb(u8x8, U8X8_MSG_DELAY_NANO, u8x8->display_info->pre_chip_disable_wait_ns, NULL);
 	SET_PORT_PIN(vgafb->cs_port, vgafb->cs_pin_mask);
 	VGAFB_DEBUG_CLR(PORTD, dbgPin); // just for debugging how long a transaction takes
 	SPI.endTransaction();
+}
+
+static void VgaFB_SendCmdAndAddr(uint8_t cmd, uint_vgafb_t addr)
+{
+	SPI.transfer(cmd);
+#if VGAFB_VRAM_ADDR_LENGTH == 3
+	SPI.transfer((uint16_t)(addr >> 16));
+#endif
+	SPI.transfer16((uint16_t)addr);
 }
 
 void VgaFB_ConfigBoard(vgafb_t* vgafb, uint8_t mul, uint8_t div, uint8_t cs_pin, uint8_t ab_pin)
@@ -158,9 +167,13 @@ bool VgaFB_Begin(vgafb_t* vgafb, vgamode_t mode)
 	// TODO move initial ram clear into it's own function and it shouldn't use SPI HW directly
 	TCNT1 = 0; // safety (otherwise there's a chance that u8x8_cad_StartTransfer gets stuck)
 	VgaFB_StartTranscation(vgafb);
-	SPI.transfer(0x02); // WRITE
-	SPI.transfer16(0); // addr
-	uint16_t wordsToErase = 65536 / 2;
+	VgaFB_SendCmdAndAddr(0x02, 0); // WRITE at 0
+	
+#if VGAFB_VRAM_ADDR_LENGTH == 2
+	uint_vgafb_t wordsToErase = 65536 / 2;
+#else
+	uint_vgafb_t wordsToErase = 65536 * 2; // assuming that the largest memory is 256kB
+#endif
 	while (wordsToErase--)
 		SPI.transfer16(0);
 	VgaFB_EndTransaction(vgafb);
@@ -210,9 +223,8 @@ void VgaFB_End(vgafb_t* vgafb) {
 void VgaFB_Clear(vgafb_t* vgafb)
 {
 	VgaFB_StartTranscation(vgafb);
-	SPI.transfer(0x02); // WRITE
-	SPI.transfer16(vgafb->vmemPtr);
-	uint16_t wordsToErase = (vgafb->vmemLastPixelOffset >> 1) + 1;// vgafb->vTotal * vgafb->vmemStride / 2;
+	VgaFB_SendCmdAndAddr(0x02, vgafb->vmemPtr); // WRITE
+	uint_vgafb_t wordsToErase = (vgafb->vmemLastPixelOffset >> 1) + 1;// vgafb->vTotal * vgafb->vmemStride / 2;
 	while (wordsToErase--)
 		SPI.transfer16(0);
 	SET_PORT_PIN(vgafb->cs_port, vgafb->cs_pin_mask);
@@ -237,7 +249,8 @@ void VgaFB_ClearScanline(vgafb_t *vgafb, int16_t scanline)
 {
 	scanline += vgafb->mode.vTotal - vgafb->mode.vSyncEnd;
 
-	int16_t offset = scanline * vgafb->vmemStride;
+	// XXX this used to be signed iaddr_t
+	uint_vgafb_t offset = scanline * vgafb->vmemStride;
 
 	int16_t wordCount = vgafb->vmemStride >> 1;
 	while (wordCount > 0)
@@ -245,8 +258,7 @@ void VgaFB_ClearScanline(vgafb_t *vgafb, int16_t scanline)
 		uint8_t w = wordCount > VGAFB_MAX_SPI_TRANSACTION_WORDS ? VGAFB_MAX_SPI_TRANSACTION_WORDS : (uint8_t)wordCount;
 
 		VgaFB_StartTranscation(vgafb);
-		SPI.transfer(0x02); // WRITE
-		SPI.transfer16(vgafb->vmemPtr + offset);
+		VgaFB_SendCmdAndAddr(0x02, vgafb->vmemPtr + offset); // WRITE
 		while (w--) SPI.transfer16(0);
 		VgaFB_EndTransaction(vgafb);
 
@@ -287,14 +299,14 @@ void VgaFB_Scroll(vgafb_t* vgafb, int16_t delta) // scanline
 		//     which is probably ok because of the performance benefits (2x). If testing shows
 		//     thet this -1 does not have this sideeffect, then this comment should be removed
 		//     and an explanation given why this is so
-		uint16_t lastPossiblyVisibleOffset = lastLineOffset * vgafb->vmemStride - 1;
+		uint_vgafb_t lastPossiblyVisibleOffset = lastLineOffset * vgafb->vmemStride - 1;
 		if (vgafb->vmemLastPixelOffset > lastPossiblyVisibleOffset)
 			vgafb->vmemLastPixelOffset = lastPossiblyVisibleOffset;
 		delta++;
 	}
 }
 
-void VgaFB_Write(vgafb_t* vgafb, uint16_t dst, uint8_t* buf, uint8_t cnt)
+void VgaFB_Write(vgafb_t* vgafb, uint_vgafb_t dst, uint8_t* buf, uint8_t cnt)
 {
 	bool mayPushLastPixel = dst + cnt > vgafb->vmemLastPixelOffset;
 
@@ -308,8 +320,7 @@ void VgaFB_Write(vgafb_t* vgafb, uint16_t dst, uint8_t* buf, uint8_t cnt)
 			b[i] = buf[i];
 		
 		VgaFB_StartTranscation(vgafb);
-		SPI.transfer(0x02); // WRITE
-		SPI.transfer16(vgafb->vmemPtr + dst);
+		VgaFB_SendCmdAndAddr(0x02, vgafb->vmemPtr + dst); // WRITE
 		SPI.transfer(b, c);
 		VgaFB_EndTransaction(vgafb);
 
@@ -329,16 +340,15 @@ void VgaFB_Write(vgafb_t* vgafb, uint16_t dst, uint8_t* buf, uint8_t cnt)
 	}
 }
 
-void VgaFB_Read(vgafb_t* vgafb, uint16_t src, uint8_t* buf, uint8_t cnt)
+void VgaFB_Read(vgafb_t* vgafb, uint_vgafb_t src, uint8_t* buf, uint8_t cnt)
 {
-	uint16_t addr = vgafb->vmemPtr + src;
+	uint_vgafb_t addr = vgafb->vmemPtr + src;
 	while(cnt > 0)
 	{
 		uint8_t c = cnt > VGAFB_MAX_SPI_TRANSACTION_BYTES ? VGAFB_MAX_SPI_TRANSACTION_BYTES : cnt;
 
 		VgaFB_StartTranscation(vgafb);
-		SPI.transfer(0x03); // READ
-		SPI.transfer16(addr);
+		VgaFB_SendCmdAndAddr(0x03, addr); // READ
 		SPI.transfer(buf, c);
 		VgaFB_EndTransaction(vgafb);
 
