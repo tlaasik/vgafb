@@ -43,7 +43,8 @@ static void VgaFB_WaitAndStart(vgafb_t* vgafb)
 {
 	// wait until all white pixels are clocked out
 	// (those << and >> ensure that there's no uint16 overflow by sacrificing precision by 2 bits)
-	while (TCNT1 < (((vgafb->vmemLastPixelOffset + vgafb->vSyncTimerIncCount) >> 2) * vgafb->pxclk_div / vgafb->pxclk_mul) << 2);
+	uint16_t v = (((vgafb->vmemLastPixelOffset + vgafb->vSyncTimerIncCount) >> 2) * vgafb->pxclk_div / vgafb->pxclk_mul) << 2;
+	while (TCNT1 < v);
 	// take exclusive access to SPI bus
 	SPI.beginTransaction(vgafb->sramSpiSettings);
 }
@@ -167,11 +168,7 @@ bool VgaFB_Begin(vgafb_t* vgafb, vgamode_t mode)
 	TCNT1 = 0; // safety (otherwise there's a chance that u8x8_cad_StartTransfer gets stuck)
 	VgaFB_StartTranscation(vgafb);
 	VgaFB_SendCmdAndAddr(0x02, 0); // WRITE at 0
-#if VGAFB_VRAM_ADDR_LENGTH == 2
-	uint_vgafb_t wordsToErase = 65536 / 2;
-#else
-	uint_vgafb_t wordsToErase = 65536 * 2; // assuming that the largest memory is 256kB
-#endif
+	uint_vgafb_t wordsToErase = VGAFB_VRAM_SIZE / 2;
 	while (wordsToErase--)
 		SPI.transfer16(0);
 	VgaFB_EndTransaction(vgafb);
@@ -255,8 +252,7 @@ void VgaFB_Clear(vgafb_t* vgafb)
 // including lines in blanking area and offscreen (<0 and >vTotal)
 static void VgaFB_ClearScanline(vgafb_t *vgafb, int16_t scanline)
 {
-	scanline += vgafb->mode.vTotal - vgafb->mode.vSyncEnd;
-	uint_vgafb_t offset = scanline * vgafb->vmemStride;
+	uint_vgafb_t offset = vgafb->vmemFirstPixelOffset + scanline * vgafb->vmemStride;
 	VgaFB_Write(vgafb, offset, 0, vgafb->vmemStride);
 }
 
@@ -267,7 +263,7 @@ void VgaFB_Scroll(vgafb_t* vgafb, int16_t delta)
 	// scroll up
 	while (delta > 0)
 	{
-		//ClearLine(_vTotal); // new blanking line
+		//VgaFB_ClearScanline(vgafb, vgafb->mode.vTotal); // new blanking line
 		VgaFB_ClearScanline(vgafb, 0);
 		uint8_t sreg = SREG;
 		noInterrupts();
@@ -280,7 +276,7 @@ void VgaFB_Scroll(vgafb_t* vgafb, int16_t delta)
 	// scroll down
 	while (delta < 0) {
 		uint16_t lastLineOffset = vgafb->mode.vVisible - 1;
-		//ClearLine(-1); // new blanking line
+		//VgaFB_ClearScanline(vgafb, -1); // new blanking line
 		VgaFB_ClearScanline(vgafb, lastLineOffset); // last visible line becames blanking line
 		uint8_t sreg = SREG;
 		noInterrupts();

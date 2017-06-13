@@ -16,6 +16,13 @@
 // Set it to how many address bytes memory chip needs. It's usually 2 or 3
 #define VGAFB_VRAM_ADDR_LENGTH 2
 
+// Define how much video memory there is. There are two cases:
+// * if VgaFB_Scroll is used then this MUST be >= memory chip size
+//   (otherwise scrolling may move some uncleared pixels into blanking scanlines)
+// * if VgaFB_Scroll is not used then this MUST be >= VRAM used (mode vTotal*hTotal).
+//   Then the upper memory region can be used for user data
+#define VGAFB_VRAM_SIZE 65536
+
 // ===== /configurable part ======
 
 #if VGAFB_VRAM_ADDR_LENGTH != 2 && VGAFB_VRAM_ADDR_LENGTH != 3
