@@ -29,6 +29,8 @@
 
 #define SET_PORT_PIN(port, pin_mask) (*(port) |= (pin_mask))
 #define CLR_PORT_PIN(port, pin_mask) (*(port) &= ~(pin_mask))
+#define VGAFB_START_CRIT() uint8_t _sreg = SREG; noInterrupts()
+#define VGAFB_END_CRIT() SREG = _sreg
 
 // TODO these shouldn't be here?
 #define hSync		5

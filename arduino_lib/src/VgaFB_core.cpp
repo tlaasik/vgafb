@@ -1,8 +1,8 @@
 
 #include "stdint.h"
 #include "VgaFB_core.h"
-#include <TimerHelpers.h>
 #include <SPI.h>
+//not using TimerHelpers.h by Nick Gammon any more (http://www.gammon.com.au/forum/?id=11504)
 
 static vgafb_t* cur_vgafb = 0;
 
@@ -167,7 +167,6 @@ bool VgaFB_Begin(vgafb_t* vgafb, vgamode_t mode)
 	TCNT1 = 0; // safety (otherwise there's a chance that u8x8_cad_StartTransfer gets stuck)
 	VgaFB_StartTranscation(vgafb);
 	VgaFB_SendCmdAndAddr(0x02, 0); // WRITE at 0
-	
 #if VGAFB_VRAM_ADDR_LENGTH == 2
 	uint_vgafb_t wordsToErase = 65536 / 2;
 #else
@@ -177,39 +176,56 @@ bool VgaFB_Begin(vgafb_t* vgafb, vgamode_t mode)
 		SPI.transfer16(0);
 	VgaFB_EndTransaction(vgafb);
 
-	// critical block starts here
-	uint8_t sreg = SREG;
-	noInterrupts();
+	VGAFB_START_CRIT();
 
-	Timer0::setMode(7, Timer0::PRESCALE_8, mode.flags & VGA_INVERTED_HSYNC
-		? Timer0::SET_B_ON_COMPARE : Timer0::CLEAR_B_ON_COMPARE);
-	OCR0A = hLineTime - 1;        // whole line time. +1 step = +0.5uS (16MHz pclk)
-	OCR0B = hSyncPulse - 1;			  // +1 = +0.5us(16MHz pclk)
-
-	Timer1::setMode(15, Timer1::PRESCALE_8, mode.flags & VGA_INVERTED_VSYNC
-		? Timer1::SET_B_ON_COMPARE : Timer1::CLEAR_B_ON_COMPARE);
-	OCR1A = (uint16_t)hLineTime * (uint16_t)mode.vTotal - 1;
-	OCR1B = (uint16_t)hLineTime * (uint16_t)vSyncPulse - 1;
-
-	//TCNT0 = 0; // TODO sometimes commenting this in will fix hsync timing (there's one timer count lag sometimes)
-	//TCNT1 = 0;
-	GTCCR |= _BV(PSRASY); // reset prescaler by setting a bit
+	// reset timer flags and values
+	TCCR0A = 0;
+	TCCR0B = 0;
+	TCCR1A = 0;
+	TCCR1B = 0;
 	TCNT0 = 0;
 	TCNT1 = 0;
 
+	// calculate values for proper timer frequency and duty cycle
+	OCR0A = hLineTime - 1;		// whole line time. +1 step = +0.5uS (16MHz pclk)
+	OCR0B = hSyncPulse - 1;		// +1 = +0.5us(16MHz pclk)
+	OCR1A = (uint16_t)hLineTime * (uint16_t)mode.vTotal - 1;
+	OCR1B = (uint16_t)hLineTime * (uint16_t)vSyncPulse - 1;
+
+	// start the timers
+	////Timer0 mode 7: Fast PWM, top = OCR0A
+	//Timer0::setMode(7, Timer0::PRESCALE_8, mode.flags & VGA_INVERTED_HSYNC
+	//	? Timer0::SET_B_ON_COMPARE : Timer0::CLEAR_B_ON_COMPARE);
+	////Timer1 mode 15: Fast PWM, TOP = OCR1A
+	//Timer1::setMode(15, Timer1::PRESCALE_8, mode.flags & VGA_INVERTED_VSYNC
+	//	? Timer1::SET_B_ON_COMPARE : Timer1::CLEAR_B_ON_COMPARE);
+	TCCR0A |= _BV(WGM00) | _BV(WGM01) | (mode.flags & VGA_INVERTED_HSYNC ? _BV(COM0B0) | _BV(COM0B1) : _BV(COM0B1));
+	TCCR1A |= _BV(WGM10) | _BV(WGM11) | (mode.flags & VGA_INVERTED_VSYNC ? _BV(COM1B0) | _BV(COM1B1) : _BV(COM1B1));
+	GTCCR |= _BV(PSRASY); // reset prescaler by setting a bit right before starting the timers
+	TCCR0B |= _BV(WGM02) | 2;
+	TCCR1B |= _BV(WGM12) | _BV(WGM13) | 2;
+	
 	TIFR1 = _BV(TOV1);		// clear overflow flag
 	TIMSK1 = _BV(TOIE1);	// interrupt on Timer0 overflow
 
 	cur_vgafb = vgafb;
 
-	SREG = sreg; // restore interrupts if they were enabled
-	// critical block ends here
+	VGAFB_END_CRIT();
 }
 
+void VgaFB_End(vgafb_t* vgafb)
+{
+	VGAFB_START_CRIT();
+	
+	// stop timers
+	TCCR0A = 0;
+	TCCR0B = 0;
+	TCCR1A = 0;
+	TCCR1B = 0;
 
-void VgaFB_End(vgafb_t* vgafb) {
-	// TODO
 	cur_vgafb = 0;
+
+	VGAFB_END_CRIT();
 }
 
 void VgaFB_Clear(vgafb_t* vgafb)
