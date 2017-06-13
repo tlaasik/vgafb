@@ -164,8 +164,6 @@ uint8_t u8x8_d_vgafb_640x480_75Hz_32MHz_generic(u8x8_t *u8x8, uint8_t msg, uint8
 	}
 	return 1;
 }
-// 16MHz OK, aga sync on modifitseeritud. mult 5/4
-// VESA 800x600@60Hz hsync: 37.9kHz 40.0  800 840 968 1056  600 601 605 628  +hsync +vsync
 uint8_t u8x8_d_vgafb_400x300_60Hz_20MHz_generic(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, void *arg_ptr)
 {
 	vgafb_t* vgafb = VGAFB_UNHIDE_POINTER(u8x8);
@@ -301,64 +299,37 @@ void U8G2_VGAFB::clear(void) {
 	home(); clearDisplay(); clearBuffer();
 }
 
-uint8_t *u8g2_m_vgafb_80_1(uint8_t *page_cnt)
-{
-	static uint8_t buf[640];
-	*page_cnt = 1;
-	return buf;
-}
-uint8_t *u8g2_m_vgafb_50_1(uint8_t *page_cnt)
-{
-	static uint8_t buf[400];
-	*page_cnt = 1;
-	return buf;
-}
-uint8_t *u8g2_m_vgafb_32_1(uint8_t *page_cnt)
-{
-	static uint8_t buf[256];
-	*page_cnt = 1;
-	return buf;
-}
-void u8g2_Setup_vgafb_640x480_75Hz_32MHz_generic_1(u8g2_t *u8g2, const u8g2_cb_t *rotation, u8x8_msg_cb byte_cb, u8x8_msg_cb gpio_and_delay_cb)
-{
-	uint8_t tile_buf_height;
-	uint8_t *buf;
-	u8g2_SetupDisplay(u8g2, u8x8_d_vgafb_640x480_75Hz_32MHz_generic, u8x8_cad_empty, byte_cb, gpio_and_delay_cb);
-	buf = u8g2_m_vgafb_80_1(&tile_buf_height);
-	u8g2_SetupBuffer(u8g2, buf, tile_buf_height, u8g2_ll_hvline_vertical_top_lsb, rotation);
-	// ODO what does u8g2_ll_hvline_vertical_top_lsb do? there are alternatives
-}
-void u8g2_Setup_vgafb_400x300_60Hz_20MHz_generic_1(u8g2_t *u8g2, const u8g2_cb_t *rotation, u8x8_msg_cb byte_cb, u8x8_msg_cb gpio_and_delay_cb)
-{
-	uint8_t tile_buf_height;
-	uint8_t *buf;
-	u8g2_SetupDisplay(u8g2, u8x8_d_vgafb_400x300_60Hz_20MHz_generic, u8x8_cad_empty, byte_cb, gpio_and_delay_cb);
-	buf = u8g2_m_vgafb_50_1(&tile_buf_height);
-	u8g2_SetupBuffer(u8g2, buf, tile_buf_height, u8g2_ll_hvline_vertical_top_lsb, rotation);
-}
-void u8g2_Setup_vgafb_256x256_60Hz_20MHz_generic_1(u8g2_t *u8g2, const u8g2_cb_t *rotation, u8x8_msg_cb byte_cb, u8x8_msg_cb gpio_and_delay_cb)
-{
-	uint8_t tile_buf_height;
-	uint8_t *buf;
-	u8g2_SetupDisplay(u8g2, u8x8_d_vgafb_256x256_60Hz_20MHz_generic, u8x8_cad_empty, byte_cb, gpio_and_delay_cb);
-	buf = u8g2_m_vgafb_32_1(&tile_buf_height);
-	u8g2_SetupBuffer(u8g2, buf, tile_buf_height, u8g2_ll_hvline_vertical_top_lsb, rotation);
-}
 
-U8G2_VGAFB_640X480_75Hz_32MHz_GENERIC_1_VGAFBBUS::U8G2_VGAFB_640X480_75Hz_32MHz_GENERIC_1_VGAFBBUS(const u8g2_cb_t *rotation, uint8_t mul, uint8_t div, uint8_t cs, uint8_t b, uint8_t reset) : U8G2_VGAFB() {
-	u8g2_Setup_vgafb_640x480_75Hz_32MHz_generic_1(&u8g2, rotation, u8x8_byte_arduino_vgafbbus, u8x8_gpio_and_delay_arduino);
+U8G2_VGAFB_640X480_75Hz_32MHz_GENERIC_1_VGAFBBUS::U8G2_VGAFB_640X480_75Hz_32MHz_GENERIC_1_VGAFBBUS(const u8g2_cb_t *rotation, uint8_t mul, uint8_t div, uint8_t cs, uint8_t b, uint8_t reset) : U8G2_VGAFB()
+{
+	u8g2_SetupDisplay(&u8g2, u8x8_d_vgafb_640x480_75Hz_32MHz_generic, u8x8_cad_empty, u8x8_byte_arduino_vgafbbus, u8x8_gpio_and_delay_arduino);
+
+	static uint8_t buf[640];
+	u8g2_SetupBuffer(&u8g2, buf, 1, u8g2_ll_hvline_vertical_top_lsb, rotation);
+	// ODO what does u8g2_ll_hvline_vertical_top_lsb do? there are alternatives
+
 	u8x8_t* u8x8 = getU8x8();
 	VGAFB_HIDE_POINTER(u8x8, vgafb);
 	u8x8_SetPin_VGAFBBUS(u8x8, mul, div, cs, b, reset);
 };
-U8G2_VGAFB_400X300_60Hz_20MHz_GENERIC_1_VGAFBBUS::U8G2_VGAFB_400X300_60Hz_20MHz_GENERIC_1_VGAFBBUS(const u8g2_cb_t *rotation, uint8_t mul, uint8_t div, uint8_t cs, uint8_t a, uint8_t reset) : U8G2_VGAFB() {
-	u8g2_Setup_vgafb_400x300_60Hz_20MHz_generic_1(&u8g2, rotation, u8x8_byte_arduino_vgafbbus, u8x8_gpio_and_delay_arduino);
+U8G2_VGAFB_400X300_60Hz_20MHz_GENERIC_1_VGAFBBUS::U8G2_VGAFB_400X300_60Hz_20MHz_GENERIC_1_VGAFBBUS(const u8g2_cb_t *rotation, uint8_t mul, uint8_t div, uint8_t cs, uint8_t a, uint8_t reset) : U8G2_VGAFB()
+{
+	u8g2_SetupDisplay(&u8g2, u8x8_d_vgafb_400x300_60Hz_20MHz_generic, u8x8_cad_empty, u8x8_byte_arduino_vgafbbus, u8x8_gpio_and_delay_arduino);
+
+	static uint8_t buf[400];
+	u8g2_SetupBuffer(&u8g2, buf, 1, u8g2_ll_hvline_vertical_top_lsb, rotation);
+
 	u8x8_t* u8x8 = getU8x8();
 	VGAFB_HIDE_POINTER(u8x8, vgafb);
 	u8x8_SetPin_VGAFBBUS(u8x8, mul, div, cs, a, reset);
 }
-U8G2_VGAFB_256X256_60Hz_20MHz_GENERIC_1_VGAFBBUS::U8G2_VGAFB_256X256_60Hz_20MHz_GENERIC_1_VGAFBBUS(const u8g2_cb_t *rotation, uint8_t mul, uint8_t div, uint8_t cs, uint8_t a, uint8_t reset) : U8G2_VGAFB() {
-	u8g2_Setup_vgafb_256x256_60Hz_20MHz_generic_1(&u8g2, rotation, u8x8_byte_arduino_vgafbbus, u8x8_gpio_and_delay_arduino);
+U8G2_VGAFB_256X256_60Hz_20MHz_GENERIC_1_VGAFBBUS::U8G2_VGAFB_256X256_60Hz_20MHz_GENERIC_1_VGAFBBUS(const u8g2_cb_t *rotation, uint8_t mul, uint8_t div, uint8_t cs, uint8_t a, uint8_t reset) : U8G2_VGAFB()
+{	
+	u8g2_SetupDisplay(&u8g2, u8x8_d_vgafb_256x256_60Hz_20MHz_generic, u8x8_cad_empty, u8x8_byte_arduino_vgafbbus, u8x8_gpio_and_delay_arduino);
+
+	static uint8_t buf[256];
+	u8g2_SetupBuffer(&u8g2, buf, 1, u8g2_ll_hvline_vertical_top_lsb, rotation);
+
 	u8x8_t* u8x8 = getU8x8();
 	VGAFB_HIDE_POINTER(u8x8, vgafb);
 	u8x8_SetPin_VGAFBBUS(u8x8, mul, div, cs, a, reset);
