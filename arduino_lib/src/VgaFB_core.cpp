@@ -8,7 +8,7 @@ static vgafb_t* cur_vgafb = 0;
 
 ISR(TIMER1_OVF_vect)
 {
-	if (cur_vgafb == 0) // not initialized
+	if (cur_vgafb == 0 || !cur_vgafb->enabled) // not initialized or not enabled
 		return;
 
 	VGAFB_DEBUG_SET(PORTD, dbgPinInt);
@@ -45,36 +45,44 @@ static void VgaFB_WaitAndStart(vgafb_t* vgafb)
 	// (those << and >> ensure that there's no uint16 overflow by sacrificing precision by 2 bits)
 	uint16_t v = (((vgafb->vmemLastPixelOffset + vgafb->vSyncTimerIncCount) >> 2) * vgafb->pxclk_div / vgafb->pxclk_mul) << 2;
 	while (TCNT1 < v);
+	
 	// take exclusive access to SPI bus
 	SPI.beginTransaction(vgafb->sramSpiSettings);
 }
 
 static void VgaFB_StartTranscation(vgafb_t* vgafb)
 {
-	// (need this later)
-	uint16_t tcntValueBeforeWait = TCNT1;
-
-	VgaFB_WaitAndStart(vgafb);
-
-	// Between "while" and "SPI.beginTransaction" Timer1 overflowed (rare, but occurs).
-	// This means that we're holding back Timer1 ISR that needs to run NOW
-	// to start clocking out next frame. By ending SPI transaction Timer1 ISR
-	// will enter immediately and we will have to wait until the last white pixel
-	// have been clocked out.
-	if (TCNT1 < tcntValueBeforeWait)
+	// if it's enabled we need to wait until the last white pixel has been clocked out to display
+	if (vgafb->enabled)
 	{
-		SPI.endTransaction();
+		// (need this later)
+		uint16_t tcntValueBeforeWait = TCNT1;
 
 		VgaFB_WaitAndStart(vgafb);
 
-		// Theoretically Timer1 may have overflown once again, but we can ignore that
-		// because if that's the case then:
-		// * there's no VGA Front Porch or in there are white pixels. Either way
-		//   this condition mustn't appear during normal operation
-		// * there's some other ISR that runs too long (no ISR mustn't take longer
-		//   than one scanline time that's roughly ~50us, depending on vga mode)
-		// * even if overflow happened we recover from it gracefully. One frame
-		//   is skipped (will draw black)
+		// Between "while" and "SPI.beginTransaction" Timer1 overflowed (rare, but occurs).
+		// This means that we're holding back Timer1 ISR that needs to run NOW
+		// to start clocking out next frame. By ending SPI transaction Timer1 ISR
+		// will enter immediately and we will have to wait until the last white pixel
+		// have been clocked out.
+		if (TCNT1 < tcntValueBeforeWait)
+		{
+			SPI.endTransaction();
+
+			VgaFB_WaitAndStart(vgafb);
+
+			// Theoretically Timer1 may have overflown once again, but we can ignore that
+			// because if that's the case then:
+			// * there's no VGA Front Porch or in there are white pixels. Either way
+			//   this condition mustn't appear during normal operation
+			// * there's some other ISR that runs too long (no ISR mustn't take longer
+			//   than one scanline time that's roughly ~50us, depending on vga mode)
+			// * even if overflow happened we recover from it gracefully. One frame
+			//   is skipped (will draw black)
+		}
+	}
+	else {
+		SPI.beginTransaction(vgafb->sramSpiSettings);
 	}
 
 	// ! we're in time critical section now until _endSpiTransaction is called
@@ -145,6 +153,7 @@ bool VgaFB_Begin(vgafb_t* vgafb, vgamode_t mode)
 	//	return false;
 
 	vgafb->mode = mode;
+	vgafb->enabled = true;
 	
 	vgafb->vVisibleScaled = mode.vVisible / vgafb->mode.scanlineHeight;
 	vgafb->vmemPtr = 0;
@@ -223,6 +232,11 @@ void VgaFB_End(vgafb_t* vgafb)
 	cur_vgafb = 0;
 
 	VGAFB_END_CRIT();
+}
+
+void VgaFB_DisplayEnabled(vgafb_t *vgafb, bool enabled)
+{
+	vgafb->enabled = enabled;
 }
 
 void VgaFB_Clear(vgafb_t* vgafb)

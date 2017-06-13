@@ -73,6 +73,7 @@ typedef struct {
 
 typedef struct {
 	vgamode_t mode;
+	bool enabled; // if false then pixels are not clocked out and MCU has exclusive VRAM access
 	
 	uint16_t vVisibleScaled;
 	uint_vgafb_t vmemPtr;
@@ -106,6 +107,8 @@ extern vgamode_t vgamode_256x256_60Hz_20MHz; // based on 400x300
 void VgaFB_ConfigBoard(vgafb_t* vgafb, uint8_t mul, uint8_t div, uint8_t cs_pin, uint8_t ab_pin);
 bool VgaFB_Begin(vgafb_t* vgafb, vgamode_t mode);
 void VgaFB_End(vgafb_t* vgafb);
+
+void VgaFB_DisplayEnabled(bool on);
 
 void VgaFB_Clear(vgafb_t* vgafb);
 
