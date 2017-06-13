@@ -148,7 +148,6 @@ bool VgaFB_Begin(vgafb_t* vgafb, vgamode_t mode)
 	vgafb->vVisibleScaled = mode.vVisible / vgafb->mode.scanlineHeight;
 	vgafb->vmemPtr = 0;
 	vgafb->vmemStride = mode.hTotal >> 3;
-	//vgafb->vmemScaledStride = mode.flags & VGA_DOUBLESCAN ? vgafb->vmemStride << 1 : vgafb->vmemStride;
 	vgafb->vmemScaledStride = vgafb->vmemStride * mode.scanlineHeight;
 	vgafb->vmemFirstPixelOffset = (mode.vTotal - mode.vSyncEnd) * vgafb->vmemStride + ((mode.hTotal - mode.hSyncStart) >> 3);
 
@@ -241,31 +240,8 @@ void VgaFB_Clear(vgafb_t* vgafb)
 static void VgaFB_ClearScanline(vgafb_t *vgafb, int16_t scanline)
 {
 	scanline += vgafb->mode.vTotal - vgafb->mode.vSyncEnd;
-
-	// XXX this used to be signed iaddr_t
 	uint_vgafb_t offset = scanline * vgafb->vmemStride;
-
-	int16_t wordCount = vgafb->vmemStride >> 1;
-	while (wordCount > 0)
-	{
-		uint8_t w = wordCount > VGAFB_MAX_SPI_TRANSACTION_WORDS ? VGAFB_MAX_SPI_TRANSACTION_WORDS : (uint8_t)wordCount;
-
-		VgaFB_StartTranscation(vgafb);
-		VgaFB_SendCmdAndAddr(0x02, vgafb->vmemPtr + offset); // WRITE
-		while (w--) SPI.transfer16(0);
-		VgaFB_EndTransaction(vgafb);
-
-		wordCount -= VGAFB_MAX_SPI_TRANSACTION_WORDS;
-		offset += VGAFB_MAX_SPI_TRANSACTION_WORDS << 1;
-	}
-}
-
-void VgaFB_ClearLine(vgafb_t *vgafb, uint16_t line)
-{
-	uint8_t cnt = vgafb->mode.scanlineHeight;
-	uint16_t base = line * cnt;
-	while (cnt--)
-		VgaFB_ClearScanline(vgafb, base + cnt);
+	VgaFB_Write(vgafb, offset, 0, vgafb->vmemStride);
 }
 
 void VgaFB_Scroll(vgafb_t* vgafb, int16_t delta)
@@ -307,18 +283,24 @@ void VgaFB_Scroll(vgafb_t* vgafb, int16_t delta)
 	}
 }
 
+// special case: if buf is null (0) then zeros are written
 void VgaFB_Write(vgafb_t* vgafb, uint_vgafb_t dst, uint8_t* buf, uint8_t cnt)
 {
-	bool mayPushLastPixel = dst + cnt > vgafb->vmemLastPixelOffset;
+	bool mayPushLastPixel = buf != 0 && dst + cnt > vgafb->vmemLastPixelOffset;
 
 	uint8_t b[VGAFB_MAX_SPI_TRANSACTION_BYTES];
 	while (cnt > 0)
 	{
 		uint8_t c = cnt > VGAFB_MAX_SPI_TRANSACTION_BYTES ? VGAFB_MAX_SPI_TRANSACTION_BYTES : cnt;
-		
+
 		uint8_t i = c;
-		while(i--)
-			b[i] = buf[i];
+		if (buf) {
+			while (i--)
+				b[i] = buf[i];
+		} else {
+			while (i--)
+				b[i] = 0;
+		}
 		
 		VgaFB_StartTranscation(vgafb);
 		VgaFB_SendCmdAndAddr(0x02, vgafb->vmemPtr + dst); // WRITE
@@ -337,7 +319,8 @@ void VgaFB_Write(vgafb_t* vgafb, uint_vgafb_t dst, uint8_t* buf, uint8_t cnt)
 
 		cnt -= c;
 		dst += c;
-		buf += c;
+		if(buf)
+			buf += c;
 	}
 }
 

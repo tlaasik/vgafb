@@ -203,10 +203,16 @@ void U8X8_VGAFB::clearLine(uint8_t line) {
 	if (line >= u8x8.display_info->tile_height)
 		return;
 
+	// can't delete in one block, because VgaFB_Write max cnt is 255. clearing 8 lines
 	uint16_t base = line << 3;
 	uint8_t cnt = 8; // tile height in lines
 	while (cnt--)
-		VgaFB_ClearLine(&vgafb, base + cnt);
+	{
+		uint_vgafb_t offset = vgafb.vmemFirstPixelOffset +
+			(base * vgafb.mode.scanlineHeight + vgafb.mode.vTotal - vgafb.mode.vSyncEnd) * vgafb.vmemStride;
+
+		VgaFB_Write(&vgafb, offset, 0, vgafb.vmemStride);
+	}
 }
 void U8X8_VGAFB::clearDisplay(void) {
 	// can do much better than u8x8_ClearDisplay(&u8x8)

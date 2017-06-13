@@ -69,8 +69,8 @@ typedef struct {
 	uint_vgafb_t vmemPtr;
 	uint_vgafb_t vmemFirstPixelOffset;
 	uint_vgafb_t vmemLastPixelOffset; // where pixel is 1
-	uint16_t vmemStride; // must be /2 (for clearScanline)
-	uint16_t vmemScaledStride;
+	uint8_t vmemStride; // must be /2 (for clearScanline)
+	uint8_t vmemScaledStride;
 	uint16_t vSyncTimerIncCount; // how many 8-pixel blocks (==TCNT1 steps) does one vsync pulse
 
 	uint8_t pxclk_mul, pxclk_div; // keep pxclk_div<=4 or there may be overflow in VgaFB_WaitAndStart
@@ -93,7 +93,6 @@ bool VgaFB_Begin(vgafb_t* vgafb, vgamode_t mode);
 void VgaFB_End(vgafb_t* vgafb);
 
 void VgaFB_Clear(vgafb_t* vgafb);
-void VgaFB_ClearLine(vgafb_t *vgafb, uint16_t line);
 
 void VgaFB_Scroll(vgafb_t* vgafb, int16_t delta);
 
