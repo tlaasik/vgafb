@@ -83,10 +83,16 @@ typedef struct {
 } vgafb_t;
 
 
+// VGA native modes
 extern vgamode_t vgamode_640x480_75Hz_32MHz;
+extern vgamode_t vgamode_640x400_85Hz_32MHz;
+// VGA doublescan modes
 extern vgamode_t vgamode_400x300_60Hz_20MHz;
 extern vgamode_t vgamode_320x240_75Hz_16MHz;
 extern vgamode_t vgamode_320x200_85Hz_16MHz;
+// VGA partial screen doublescan modes
+extern vgamode_t vgamode_256x256_60Hz_20MHz; // based on 400x300
+
 
 void VgaFB_ConfigBoard(vgafb_t* vgafb, uint8_t mul, uint8_t div, uint8_t cs_pin, uint8_t ab_pin);
 bool VgaFB_Begin(vgafb_t* vgafb, vgamode_t mode);

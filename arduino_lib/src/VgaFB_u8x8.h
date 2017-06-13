@@ -36,6 +36,9 @@ public: U8X8_VGAFB_640X480_75Hz_32MHz_GENERIC_VGAFBBUS(uint8_t mul, uint8_t div,
 class U8X8_VGAFB_400X300_60Hz_20MHz_GENERIC_VGAFBBUS : public U8X8_VGAFB {
 public: U8X8_VGAFB_400X300_60Hz_20MHz_GENERIC_VGAFBBUS(uint8_t mul, uint8_t div, uint8_t cs, uint8_t ab, uint8_t reset = U8X8_PIN_NONE);
 };
+class U8X8_VGAFB_256X256_60Hz_20MHz_GENERIC_VGAFBBUS : public U8X8_VGAFB {
+public: U8X8_VGAFB_256X256_60Hz_20MHz_GENERIC_VGAFBBUS(uint8_t mul, uint8_t div, uint8_t cs, uint8_t ab, uint8_t reset = U8X8_PIN_NONE);
+};
 
 class U8G2_VGAFB : public U8G2 {
 protected:
@@ -52,6 +55,9 @@ public: U8G2_VGAFB_640X480_75Hz_32MHz_GENERIC_1_VGAFBBUS(const u8g2_cb_t *rotati
 };
 class U8G2_VGAFB_400X300_60Hz_20MHz_GENERIC_1_VGAFBBUS : public U8G2_VGAFB {
 public: U8G2_VGAFB_400X300_60Hz_20MHz_GENERIC_1_VGAFBBUS(const u8g2_cb_t *rotation, uint8_t mul, uint8_t div, uint8_t cs, uint8_t ab, uint8_t reset = U8X8_PIN_NONE);
+};
+class U8G2_VGAFB_256X256_60Hz_20MHz_GENERIC_1_VGAFBBUS : public U8G2_VGAFB {
+public: U8G2_VGAFB_256X256_60Hz_20MHz_GENERIC_1_VGAFBBUS(const u8g2_cb_t *rotation, uint8_t mul, uint8_t div, uint8_t cs, uint8_t ab, uint8_t reset = U8X8_PIN_NONE);
 };
 
 #endif
