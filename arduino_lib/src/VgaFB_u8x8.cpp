@@ -6,9 +6,8 @@
 static uint8_t u8x8_d_vgafb_generic(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, void *arg_ptr)
 {
 	uint8_t *tilePtr;
-	uint16_t basePixelOffs, pixelOffs, ramAddr, c3;
-	uint8_t repeat, r, c, j, x, y, xx, yy, k, d, t;
-	uint8_t buf[4];
+	uint16_t basePixelOffs, pixelOffs, c3;
+	uint8_t repeat, r, c, j, x, y, xx, d, t, s;
 
 	vgafb_t* vgafb = VGAFB_UNHIDE_POINTER(u8x8);
 
@@ -57,7 +56,11 @@ static uint8_t u8x8_d_vgafb_generic(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, 
 						d |= (tilePtr[j + c3] >> r) & 1;
 					}
 
-					VgaFB_Write(vgafb, pixelOffs, &d, 1);
+					s = vgafb->mode.scanlineHeight;
+					while (s--) {
+						VgaFB_Write(vgafb, pixelOffs, &d, 1);
+						pixelOffs += vgafb->vmemStride;
+					}
 				}
 			}
 		}
