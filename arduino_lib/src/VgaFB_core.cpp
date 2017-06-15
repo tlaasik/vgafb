@@ -1,4 +1,36 @@
+/*
 
+VgaFB_core.cpp
+
+Minimalistic VGA framebuffer for microcontrollers
+https://github.com/tlaasik/vgafb/
+
+---------------------------------------------------------------------------------------
+
+Copyright (c) 2017, toomas.laasik@gmail.com
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice, this list
+of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright notice, this
+list of conditions and the following disclaimer in the documentation and/or other
+materials provided with the distribution.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+---------------------------------------------------------------------------------------
+*/
 #include "stdint.h"
 #include "VgaFB_core.h"
 #include <SPI.h>
@@ -22,9 +54,6 @@
 #define VGAFB_END_CRIT() SREG = _sreg
 
 #ifdef VGAFB_DEBUG
-// TODO move these two pin numbers out from here?
-#define dbgPin		6
-#define dbgPinInt	2
 #define VGAFB_DEBUG_CLR(x,y) (x&=(~(1<<y)))
 #define VGAFB_DEBUG_SET(x,y) (x|=(1<<y))
 #else
@@ -39,7 +68,7 @@ ISR(TIMER1_OVF_vect)
 	if (cur_vgafb == 0 || !cur_vgafb->enabled) // not initialized or not enabled
 		return;
 
-	VGAFB_DEBUG_SET(PORTD, dbgPinInt);
+	VGAFB_DEBUG_SET(PORTD, VGAFB_DEBUG_PIN_ISR);
 
 	// if we're still in PXOUT mode then get out from it
 	// prepare for clocking pixels out (send address)
@@ -62,7 +91,7 @@ ISR(TIMER1_OVF_vect)
 
 	SPI.endTransaction();
 
-	VGAFB_DEBUG_CLR(PORTD, dbgPinInt);
+	VGAFB_DEBUG_CLR(PORTD, VGAFB_DEBUG_PIN_ISR);
 }
 
 
@@ -115,7 +144,7 @@ static void VgaFB_StartTranscation(vgafb_t* vgafb)
 	// ! we're in time critical section now until _endSpiTransaction is called
 	// (interrupts were disabled in SPI.beginTransaction)
 
-	VGAFB_DEBUG_SET(PORTD, dbgPin); // just for debugging how long a transaction takes
+	VGAFB_DEBUG_SET(PORTD, VGAFB_DEBUG_PIN_TRANSACTION);
 
 	// exit PXOUT mode and deselect vram /CS=1
 	// (most likely we already were in this state, but we need to be sure here)
@@ -129,7 +158,7 @@ static void VgaFB_EndTransaction(vgafb_t* vgafb)
 {
 	// !cpu is way too slow for this, natural delay is enough! u8x8->gpio_and_delay_cb(u8x8, U8X8_MSG_DELAY_NANO, u8x8->display_info->pre_chip_disable_wait_ns, NULL);
 	SET_PORT_PIN(vgafb->cs_port, vgafb->cs_pin_mask);
-	VGAFB_DEBUG_CLR(PORTD, dbgPin); // just for debugging how long a transaction takes
+	VGAFB_DEBUG_CLR(PORTD, VGAFB_DEBUG_PIN_TRANSACTION);
 	SPI.endTransaction();
 }
 
@@ -145,8 +174,8 @@ void VgaFB_ConfigBoard(vgafb_t* vgafb, uint8_t mul, uint8_t div, uint8_t cs_pin,
 	vgafb->cs_pin_mask = digitalPinToBitMask(cs_pin);
 	vgafb->ab_pin_mask = digitalPinToBitMask(ab_pin);
 
-	pinMode(VGA_FIXED_PIN_HSYNC, OUTPUT);
-	pinMode(VGA_FIXED_PIN_VSYNC, OUTPUT);
+	pinMode(VGAFB_FIXED_PIN_HSYNC, OUTPUT);
+	pinMode(VGAFB_FIXED_PIN_VSYNC, OUTPUT);
 	pinMode(ab_pin, OUTPUT);
 	pinMode(cs_pin, OUTPUT);
 
@@ -154,8 +183,8 @@ void VgaFB_ConfigBoard(vgafb_t* vgafb, uint8_t mul, uint8_t div, uint8_t cs_pin,
 	vgafb->pxclk_div = div;
 
 #ifdef VGAFB_DEBUG
-	pinMode(dbgPin, OUTPUT);
-	pinMode(dbgPinInt, OUTPUT);
+	pinMode(VGAFB_DEBUG_PIN_TRANSACTION, OUTPUT);
+	pinMode(VGAFB_DEBUG_PIN_ISR, OUTPUT);
 #endif
 }
 
