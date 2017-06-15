@@ -159,6 +159,10 @@ typedef struct {
  *            For example, if CPU runs at 16MHz and pxclk is 20MHz then this would be 5/4
  *   cs_pin:  Arduino pin number that is connected to /SEL (memory chip select pin)
  *   ab_pin:  Arduino pin number that connects to either A or B. Which exactly depends on vgamode
+ *
+ * For a mode to be usable with pixel clock mul/div the following divisions must be whole numbers:
+ *   (hTotal * div) / (8 * mul)
+ *   ((hSyncEnd - hSyncStart) * div) / (8 * mul)
  */
 void VgaFB_ConfigBoard(vgafb_t* vgafb, uint8_t mul, uint8_t div, uint8_t cs_pin, uint8_t ab_pin);
 
@@ -186,7 +190,7 @@ void VgaFB_End(vgafb_t* vgafb);
  * and VgaFB_Write, but be careful what you write there. If in doubt overwrite
  * temporarily used VRAM with zeros afterwards, it's safe.
  */
-void VgaFB_DisplayEnabled(bool on);
+void VgaFB_DisplayEnabled(vgafb_t *vgafb, bool on);
 
 /**
  * Clears display to black
@@ -228,14 +232,19 @@ void VgaFB_Write(vgafb_t* vgafb, uint_vgafb_t dst, uint8_t* buf, uint_vgafb_t cn
 void VgaFB_Read(vgafb_t* vgafb, uint_vgafb_t src, uint8_t* buf, uint_vgafb_t cnt);
 
 
-// VGA native modes
-extern vgamode_t vgamode_640x480_75Hz_32MHz;
-extern vgamode_t vgamode_640x400_85Hz_32MHz;
-// VGA doublescan modes
-extern vgamode_t vgamode_400x300_60Hz_20MHz;
-extern vgamode_t vgamode_320x240_75Hz_16MHz;
-extern vgamode_t vgamode_320x200_85Hz_16MHz;
-// VGA partial screen doublescan modes
-extern vgamode_t vgamode_256x256_60Hz_20MHz; // based on 400x300
+/**
+ * Predefined display modes. For details see vgafb_modes.cpp
+ *
+ * For each mode VRAM used is calculated here. Memory chip must be at least that big
+ */
+extern vgamode_t vgamode_400x300_60Hz_20MHz;   // 41291 bytes
+extern vgamode_t vgamode_256x256_60Hz_20MHz;   // 41291 bytes
+extern vgamode_t vgamode_640x480_75Hz_32MHz;   // 53000 bytes
+extern vgamode_t vgamode_320x240_75Hz_16MHz;   // 26500 bytes
+extern vgamode_t vgamode_640x400_85Hz_32MHz;   // 46280 btyes
+extern vgamode_t vgamode_320x200_85Hz_16MHz;   // 23140 bytes
+extern vgamode_t vgamode_640x480_60Hz_25MHz;   // 52500 bytes
+extern vgamode_t vgamode_320x240_60Hz_12_6MHz; // 26250 bytes
+extern vgamode_t vgamode_160x120_60Hz_6_3MHz;  // 13125 bytes
 
 #endif
