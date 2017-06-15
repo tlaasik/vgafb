@@ -20,12 +20,15 @@ Minimalistic VGA framebuffer hardware and software for microcontrollers (right n
 4. See [arduino_lib/examples/TextOnScreen_8x2g.ino](arduino_lib/examples/TextOnScreen_8x2g.ino)
 
 List of modes supported (format tells screen width and height, refresh rate and required pixel clock)
-* vgamode_640x480_75Hz_32MHz
-* vgamode_640x400_85Hz_32MHz
 * vgamode_400x300_60Hz_20MHz
+* vgamode_256x256_60Hz_20MHz
+* vgamode_640x480_75Hz_32MHz
 * vgamode_320x240_75Hz_16MHz
+* vgamode_640x400_85Hz_32MHz
 * vgamode_320x200_85Hz_16MHz
-* vgamode_256x256_60Hz_20MHz (partial screen, uses 400x300 mode)
+* vgamode_640x480_60Hz_25MHz
+* vgamode_320x240_60Hz_12_6MHz
+* vgamode_160x120_60Hz_6_3MHz
 
 Wiring to Arduino Nano
 ```
