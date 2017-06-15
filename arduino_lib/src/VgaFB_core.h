@@ -13,7 +13,7 @@
 #define VGAFB_MAX_SPI_TRANSACTION_BYTES		8
 #define VGAFB_MAX_SPI_TRANSACTION_WORDS		(VGAFB_MAX_SPI_TRANSACTION_BYTES / 2)
 
-// Set it to how many address bytes memory chip needs. It's usually 2 or 3
+// Set it to how many address bytes memory chip needs. It's usually 2, but can be 3 or 4 too
 #define VGAFB_VRAM_ADDR_LENGTH 2
 
 // Define how much video memory there is. There are two cases:
@@ -25,42 +25,24 @@
 
 // ===== /configurable part ======
 
-#if VGAFB_VRAM_ADDR_LENGTH != 2 && VGAFB_VRAM_ADDR_LENGTH != 3
-#error VGAFB_VRAM_ADDR_LENGTH must be 2 or 3
-#endif
-
 // TODO use better name
 // vgamode_t flags
 #define VGA_INVERTED_VSYNC	1
 #define VGA_INVERTED_HSYNC	2
 
-#define SET_PORT_PIN(port, pin_mask) (*(port) |= (pin_mask))
-#define CLR_PORT_PIN(port, pin_mask) (*(port) &= ~(pin_mask))
-#define VGAFB_START_CRIT() uint8_t _sreg = SREG; noInterrupts()
-#define VGAFB_END_CRIT() SREG = _sreg
+// defines pins that VgaFB uses and that can't be changed (arduino pin number)
+#define VGA_FIXED_PIN_HSYNC		5
+#define VGA_FIXED_PIN_VSYNC		10
 
-// TODO these shouldn't be here?
-#define hSync		5
-#define vSync		10
-
-// TODO this MUST have the same value as U8X8_PIN_NONE. do smth about it
-#define VGAFB_PIN_NONE 255
-
-#ifdef VGAFB_DEBUG
-// TODO move these two pin numbers out from here?
-#define dbgPin		6
-#define dbgPinInt	2
-#define VGAFB_DEBUG_CLR(x,y) (x&=(~(1<<y)))
-#define VGAFB_DEBUG_SET(x,y) (x|=(1<<y))
-#else
-#define VGAFB_DEBUG_CLR(x,y)
-#define VGAFB_DEBUG_SET(x,y)
-#endif
-
-#if VGAFB_VRAM_ADDR_LENGTH <= 2
+#if VGAFB_VRAM_ADDR_LENGTH == 2
 #define uint_vgafb_t uint16_t
-#else
+#elif VGAFB_VRAM_ADDR_LENGTH == 3
+// if there was uint24_t then we'd use it here
 #define uint_vgafb_t uint32_t
+#elif VGAFB_VRAM_ADDR_LENGTH == 4
+#define uint_vgafb_t uint32_t
+#else
+#error VGAFB_VRAM_ADDR_LENGTH must be 2, 3 or 4
 #endif
 
 
@@ -114,7 +96,7 @@ void VgaFB_Clear(vgafb_t* vgafb);
 
 void VgaFB_Scroll(vgafb_t* vgafb, int16_t delta);
 
-void VgaFB_Write(vgafb_t* vgafb, uint_vgafb_t dst, uint8_t* buf, uint8_t cnt);
-void VgaFB_Read(vgafb_t* vgafb, uint_vgafb_t src, uint8_t* buf, uint8_t cnt);
+void VgaFB_Write(vgafb_t* vgafb, uint_vgafb_t dst, uint8_t* buf, uint_vgafb_t cnt);
+void VgaFB_Read(vgafb_t* vgafb, uint_vgafb_t src, uint8_t* buf, uint_vgafb_t cnt);
 
 #endif

@@ -4,6 +4,34 @@
 #include <SPI.h>
 //not using TimerHelpers.h by Nick Gammon any more (http://www.gammon.com.au/forum/?id=11504)
 
+
+#if VGAFB_VRAM_ADDR_LENGTH == 2
+#define SPI_SEND_CMD_AND_ADDR(cmd, addr) \
+	{ SPI.transfer(cmd); SPI.transfer16((uint16_t)addr); }
+#elif VGAFB_VRAM_ADDR_LENGTH == 3
+#define SPI_SEND_CMD_AND_ADDR(uint8_t cmd, uint_vgafb_t addr) \
+	{ SPI.transfer(cmd); SPI.transfer((uint16_t)(addr >> 16)); SPI.transfer16((uint16_t)addr); }
+#elif VGAFB_VRAM_ADDR_LENGTH == 4
+#define SPI_SEND_CMD_AND_ADDR(uint8_t cmd, uint_vgafb_t addr) \
+	{ SPI.transfer(cmd); SPI.transfer16((uint16_t)(addr >> 16)); SPI.transfer16((uint16_t)addr); }
+#endif
+
+#define SET_PORT_PIN(port, pin_mask) (*(port) |= (pin_mask))
+#define CLR_PORT_PIN(port, pin_mask) (*(port) &= ~(pin_mask))
+#define VGAFB_START_CRIT() uint8_t _sreg = SREG; noInterrupts()
+#define VGAFB_END_CRIT() SREG = _sreg
+
+#ifdef VGAFB_DEBUG
+// TODO move these two pin numbers out from here?
+#define dbgPin		6
+#define dbgPinInt	2
+#define VGAFB_DEBUG_CLR(x,y) (x&=(~(1<<y)))
+#define VGAFB_DEBUG_SET(x,y) (x|=(1<<y))
+#else
+#define VGAFB_DEBUG_CLR(x,y)
+#define VGAFB_DEBUG_SET(x,y)
+#endif
+
 static vgafb_t* cur_vgafb = 0;
 
 ISR(TIMER1_OVF_vect)
@@ -26,8 +54,7 @@ ISR(TIMER1_OVF_vect)
 
 	// start READ cmd
 	CLR_PORT_PIN(cur_vgafb->cs_port, cur_vgafb->cs_pin_mask);
-	SPI.transfer(0x03); // READ
-	SPI.transfer16(cur_vgafb->vmemPtr);
+	SPI_SEND_CMD_AND_ADDR(0x03, cur_vgafb->vmemPtr); // READ
 
 	// set mode to PXOUT. Pixels start clocking out after vsync edge.
 	// this disconnects video hw from SPI so we can end transaction
@@ -106,32 +133,26 @@ static void VgaFB_EndTransaction(vgafb_t* vgafb)
 	SPI.endTransaction();
 }
 
-static void VgaFB_SendCmdAndAddr(uint8_t cmd, uint_vgafb_t addr)
-{
-	SPI.transfer(cmd);
-#if VGAFB_VRAM_ADDR_LENGTH == 3
-	SPI.transfer((uint16_t)(addr >> 16));
-#endif
-	SPI.transfer16((uint16_t)addr);
-}
-
 void VgaFB_ConfigBoard(vgafb_t* vgafb, uint8_t mul, uint8_t div, uint8_t cs_pin, uint8_t ab_pin)
 {
+	uint8_t cs_port = digitalPinToPort(cs_pin);
+	uint8_t ab_port = digitalPinToPort(ab_pin);
+	if (cs_port == NOT_A_PIN || ab_port == NOT_A_PIN)
+		return; // XXX this is fail, but there's no way to indicate it right now
+
+	vgafb->cs_port = portOutputRegister(cs_port);
+	vgafb->ab_port = portOutputRegister(ab_port);
+	vgafb->cs_pin_mask = digitalPinToBitMask(cs_pin);
+	vgafb->ab_pin_mask = digitalPinToBitMask(ab_pin);
+
+	pinMode(VGA_FIXED_PIN_HSYNC, OUTPUT);
+	pinMode(VGA_FIXED_PIN_VSYNC, OUTPUT);
+	pinMode(ab_pin, OUTPUT);
+	pinMode(cs_pin, OUTPUT);
+
 	vgafb->pxclk_mul = mul;
 	vgafb->pxclk_div = div;
 
-	uint8_t port = digitalPinToPort(cs_pin);
-	if (port == NOT_A_PIN)
-		return; // XXX this is fail, but there's no way to indicate it right now
-	vgafb->cs_port = portOutputRegister(port);
-	vgafb->cs_pin_mask = digitalPinToBitMask(cs_pin);
-
-	port = digitalPinToPort(ab_pin);
-	if (port == NOT_A_PIN)
-		return; // XXX this is fail, but there's no way to indicate it right now
-	vgafb->ab_port = portOutputRegister(port);
-	vgafb->ab_pin_mask = digitalPinToBitMask(ab_pin);
-	
 #ifdef VGAFB_DEBUG
 	pinMode(dbgPin, OUTPUT);
 	pinMode(dbgPinInt, OUTPUT);
@@ -153,7 +174,6 @@ bool VgaFB_Begin(vgafb_t* vgafb, vgamode_t mode)
 	//	return false;
 
 	vgafb->mode = mode;
-	vgafb->enabled = true;
 	
 	vgafb->vVisibleScaled = mode.vVisible / vgafb->mode.scanlineHeight;
 	vgafb->vmemPtr = 0;
@@ -172,16 +192,11 @@ bool VgaFB_Begin(vgafb_t* vgafb, vgamode_t mode)
 	//vgafb->sramSpiSettings = SPISettings(u8x8->display_info->sck_clock_hz, MSBFIRST, internal_spi_mode);
 	vgafb->sramSpiSettings = SPISettings(20000000, MSBFIRST, SPI_MODE0);
 
-	// clear all 64k of SRAM (smaller chips will be cleared multiple times, but it doesn't break anything)
-	// TODO move initial ram clear into it's own function and it shouldn't use SPI HW directly
-	TCNT1 = 0; // safety (otherwise there's a chance that u8x8_cad_StartTransfer gets stuck)
-	VgaFB_StartTranscation(vgafb);
-	VgaFB_SendCmdAndAddr(0x02, 0); // WRITE at 0
-	uint_vgafb_t wordsToErase = VGAFB_VRAM_SIZE / 2;
-	while (wordsToErase--)
-		SPI.transfer16(0);
-	VgaFB_EndTransaction(vgafb);
-
+	// clear all SRAM (smaller chips will be cleared multiple times, but it doesn't break anything)
+	vgafb->enabled = false;
+	VgaFB_Write(vgafb, 0, 0, VGAFB_VRAM_SIZE - 1);
+	VgaFB_Write(vgafb, VGAFB_VRAM_SIZE - 1, 0, 1);
+	
 	VGAFB_START_CRIT();
 
 	// reset timer flags and values
@@ -205,17 +220,20 @@ bool VgaFB_Begin(vgafb_t* vgafb, vgamode_t mode)
 	////Timer1 mode 15: Fast PWM, TOP = OCR1A
 	//Timer1::setMode(15, Timer1::PRESCALE_8, mode.flags & VGA_INVERTED_VSYNC
 	//	? Timer1::SET_B_ON_COMPARE : Timer1::CLEAR_B_ON_COMPARE);
-	TCCR0A |= _BV(WGM00) | _BV(WGM01) | (mode.flags & VGA_INVERTED_HSYNC ? _BV(COM0B0) | _BV(COM0B1) : _BV(COM0B1));
-	TCCR1A |= _BV(WGM10) | _BV(WGM11) | (mode.flags & VGA_INVERTED_VSYNC ? _BV(COM1B0) | _BV(COM1B1) : _BV(COM1B1));
+	uint8_t _0a = _BV(WGM00) | _BV(WGM01) | (mode.flags & VGA_INVERTED_HSYNC ? _BV(COM0B0) | _BV(COM0B1) : _BV(COM0B1));
+	uint8_t _1a = _BV(WGM10) | _BV(WGM11) | (mode.flags & VGA_INVERTED_VSYNC ? _BV(COM1B0) | _BV(COM1B1) : _BV(COM1B1));
 	GTCCR |= _BV(PSRASY); // reset prescaler by setting a bit right before starting the timers
-	TCCR0B |= _BV(WGM02) | 2;
-	TCCR1B |= _BV(WGM12) | _BV(WGM13) | 2;
+	TCCR0A = _0a;
+	TCCR1A = _1a;
+	TCCR0B = _BV(WGM02) | 2;
+	TCCR1B = _BV(WGM12) | _BV(WGM13) | 2;
 	
 	TIFR1 = _BV(TOV1);		// clear overflow flag
 	TIMSK1 = _BV(TOIE1);	// interrupt on Timer0 overflow
 
 	cur_vgafb = vgafb;
 
+	vgafb->enabled = true;
 	VGAFB_END_CRIT();
 }
 
@@ -242,7 +260,7 @@ void VgaFB_DisplayEnabled(vgafb_t *vgafb, bool enabled)
 void VgaFB_Clear(vgafb_t* vgafb)
 {
 	VgaFB_StartTranscation(vgafb);
-	VgaFB_SendCmdAndAddr(0x02, vgafb->vmemPtr); // WRITE
+	SPI_SEND_CMD_AND_ADDR(0x02, vgafb->vmemPtr); // WRITE
 	uint_vgafb_t wordsToErase = (vgafb->vmemLastPixelOffset >> 1) + 1;// vgafb->vTotal * vgafb->vmemStride / 2;
 	while (wordsToErase--)
 		SPI.transfer16(0);
@@ -310,7 +328,7 @@ void VgaFB_Scroll(vgafb_t* vgafb, int16_t delta)
 }
 
 // special case: if buf is null (0) then zeros are written
-void VgaFB_Write(vgafb_t* vgafb, uint_vgafb_t dst, uint8_t* buf, uint8_t cnt)
+void VgaFB_Write(vgafb_t* vgafb, uint_vgafb_t dst, uint8_t* buf, uint_vgafb_t cnt)
 {
 	bool mayPushLastPixel = buf != 0 && dst + cnt > vgafb->vmemLastPixelOffset;
 
@@ -329,7 +347,7 @@ void VgaFB_Write(vgafb_t* vgafb, uint_vgafb_t dst, uint8_t* buf, uint8_t cnt)
 		}
 		
 		VgaFB_StartTranscation(vgafb);
-		VgaFB_SendCmdAndAddr(0x02, vgafb->vmemPtr + dst); // WRITE
+		SPI_SEND_CMD_AND_ADDR(0x02, vgafb->vmemPtr + dst); // WRITE
 		SPI.transfer(b, c);
 		VgaFB_EndTransaction(vgafb);
 
@@ -350,7 +368,7 @@ void VgaFB_Write(vgafb_t* vgafb, uint_vgafb_t dst, uint8_t* buf, uint8_t cnt)
 	}
 }
 
-void VgaFB_Read(vgafb_t* vgafb, uint_vgafb_t src, uint8_t* buf, uint8_t cnt)
+void VgaFB_Read(vgafb_t* vgafb, uint_vgafb_t src, uint8_t* buf, uint_vgafb_t cnt)
 {
 	uint_vgafb_t addr = vgafb->vmemPtr + src;
 	while(cnt > 0)
@@ -358,7 +376,7 @@ void VgaFB_Read(vgafb_t* vgafb, uint_vgafb_t src, uint8_t* buf, uint8_t cnt)
 		uint8_t c = cnt > VGAFB_MAX_SPI_TRANSACTION_BYTES ? VGAFB_MAX_SPI_TRANSACTION_BYTES : cnt;
 
 		VgaFB_StartTranscation(vgafb);
-		VgaFB_SendCmdAndAddr(0x03, addr); // READ
+		SPI_SEND_CMD_AND_ADDR(0x03, addr); // READ
 		SPI.transfer(buf, c);
 		VgaFB_EndTransaction(vgafb);
 

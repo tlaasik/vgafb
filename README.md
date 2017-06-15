@@ -93,11 +93,11 @@ void loop() {
 void VgaFB_ConfigBoard(vgafb_t * vgafb, uint8_t mul, uint8_t div, uint8_t cs_pin, uint8_t ab_pin);
 bool VgaFB_Begin(vgafb_t * vgafb, vgamode_t mode);
 void VgaFB_End(vgafb_t * vgafb);
-void VgaFB_DisplayEnabled(vgafb_t *vgafb, bool enabled);
+void VgaFB_DisplayEnabled(vgafb_t * vgafb, bool enabled);
 void VgaFB_Clear(vgafb_t * vgafb);
 void VgaFB_Scroll(vgafb_t * vgafb, int16_t deltaScanline);
-void VgaFB_Write(vgafb_t* vgafb, uint_vgafb_t dst, uint8_t* src, uint8_t cnt);
-void VgaFB_Read(vgafb_t* vgafb, uint_vgafb_t src, uint8_t* dst, uint8_t cnt);
+void VgaFB_Write(vgafb_t * vgafb, uint_vgafb_t dst, uint8_t * src, uint_vgafb_t cnt);
+void VgaFB_Read(vgafb_t * vgafb, uint_vgafb_t src, uint8_t * dst, uint_vgafb_t cnt);
 // uint_vgafb_t is usually uint16_t (VGAFB_VRAM_ADDR_LENGTH==2)
 ```
 

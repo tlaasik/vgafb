@@ -213,8 +213,8 @@ uint8_t u8x8_d_vgafb_256x256_60Hz_20MHz_generic(u8x8_t *u8x8, uint8_t msg, uint8
 	{
 	case U8X8_MSG_BYTE_INIT:
 		// disable chipselect
-		//u8x8_gpio_SetCS(u8x8, u8x8->display_info->chip_disable_level);
-		SET_PORT_PIN(vgafb->cs_port, vgafb->cs_pin_mask);
+		u8x8_gpio_SetCS(u8x8, u8x8->display_info->chip_disable_level);
+		//SET_PORT_PIN(vgafb->cs_port, vgafb->cs_pin_mask);
 		// no wait required here
 
 		SPI.usingInterrupt(0xFF);
@@ -227,14 +227,8 @@ uint8_t u8x8_d_vgafb_256x256_60Hz_20MHz_generic(u8x8_t *u8x8, uint8_t msg, uint8
 	return 0;
 }
 
-void u8x8_SetPin_VGAFBBUS(u8x8_t *u8x8, uint8_t mul, uint8_t div, uint8_t cs, uint8_t ab, uint8_t reset)
+void u8x8_SetPin_VGAFBBUS(u8x8_t *u8x8, uint8_t mul, uint8_t div, uint8_t cs, uint8_t ab)
 {
-	u8x8_SetPin(u8x8, U8X8_PIN_CS, cs);
-	u8x8_SetPin(u8x8, U8X8_PIN_VGAFB_HSYNC, hSync);
-	u8x8_SetPin(u8x8, U8X8_PIN_VGAFB_VSYNC, vSync);
-	u8x8_SetPin(u8x8, U8X8_PIN_VGAFB_AB, ab);
-	u8x8_SetPin(u8x8, U8X8_PIN_RESET, reset);
-
 	vgafb_t* vgafb = VGAFB_UNHIDE_POINTER(u8x8);
 	VgaFB_ConfigBoard(vgafb, mul, div, cs, ab);
 }
@@ -244,16 +238,9 @@ void U8X8_VGAFB::clearLine(uint8_t line) {
 	if (line >= u8x8.display_info->tile_height)
 		return;
 
-	// can't delete in one block, because VgaFB_Write max cnt is 255. clearing 8 lines
-	uint16_t base = line << 3;
-	uint8_t cnt = 8; // tile height in lines
-	while (cnt--)
-	{
-		uint_vgafb_t offset = vgafb.vmemFirstPixelOffset +
-			(base * vgafb.mode.scanlineHeight + vgafb.mode.vTotal - vgafb.mode.vSyncEnd) * vgafb.vmemStride;
+	uint_vgafb_t offset = vgafb.vmemFirstPixelOffset + (line << 3) * vgafb.vmemScaledStride;
 
-		VgaFB_Write(&vgafb, offset, 0, vgafb.vmemStride);
-	}
+	VgaFB_Write(&vgafb, offset, 0, vgafb.vmemScaledStride << 3);
 }
 void U8X8_VGAFB::clearDisplay(void) {
 	// can do much better than u8x8_ClearDisplay(&u8x8)
@@ -268,23 +255,23 @@ void U8X8_VGAFB::scroll(int8_t tileDelta) {
 	VgaFB_Scroll(&vgafb, tileDelta << 3);
 }
 
-U8X8_VGAFB_640X480_75Hz_32MHz_GENERIC_VGAFBBUS::U8X8_VGAFB_640X480_75Hz_32MHz_GENERIC_VGAFBBUS(uint8_t mul, uint8_t div, uint8_t cs, uint8_t b, uint8_t reset) : U8X8_VGAFB() {
+U8X8_VGAFB_640X480_75Hz_32MHz_GENERIC_VGAFBBUS::U8X8_VGAFB_640X480_75Hz_32MHz_GENERIC_VGAFBBUS(uint8_t mul, uint8_t div, uint8_t cs, uint8_t b) : U8X8_VGAFB() {
 	u8x8_t* u8x8 = getU8x8();
 	u8x8_Setup(u8x8, u8x8_d_vgafb_640x480_75Hz_32MHz_generic, u8x8_cad_empty, u8x8_byte_arduino_vgafbbus, u8x8_gpio_and_delay_arduino);
 	VGAFB_HIDE_POINTER(u8x8, vgafb);
-	u8x8_SetPin_VGAFBBUS(u8x8, mul, div, cs, b, reset);
+	u8x8_SetPin_VGAFBBUS(u8x8, mul, div, cs, b);
 }
-U8X8_VGAFB_400X300_60Hz_20MHz_GENERIC_VGAFBBUS::U8X8_VGAFB_400X300_60Hz_20MHz_GENERIC_VGAFBBUS(uint8_t mul, uint8_t div, uint8_t cs, uint8_t a, uint8_t reset) : U8X8_VGAFB() {
+U8X8_VGAFB_400X300_60Hz_20MHz_GENERIC_VGAFBBUS::U8X8_VGAFB_400X300_60Hz_20MHz_GENERIC_VGAFBBUS(uint8_t mul, uint8_t div, uint8_t cs, uint8_t a) : U8X8_VGAFB() {
 	u8x8_t* u8x8 = getU8x8();
 	u8x8_Setup(u8x8, u8x8_d_vgafb_400x300_60Hz_20MHz_generic, u8x8_cad_empty, u8x8_byte_arduino_vgafbbus, u8x8_gpio_and_delay_arduino);
 	VGAFB_HIDE_POINTER(u8x8, vgafb);
-	u8x8_SetPin_VGAFBBUS(u8x8, mul, div, cs, a, reset);
+	u8x8_SetPin_VGAFBBUS(u8x8, mul, div, cs, a);
 }
-U8X8_VGAFB_256X256_60Hz_20MHz_GENERIC_VGAFBBUS::U8X8_VGAFB_256X256_60Hz_20MHz_GENERIC_VGAFBBUS(uint8_t mul, uint8_t div, uint8_t cs, uint8_t a, uint8_t reset) : U8X8_VGAFB() {
+U8X8_VGAFB_256X256_60Hz_20MHz_GENERIC_VGAFBBUS::U8X8_VGAFB_256X256_60Hz_20MHz_GENERIC_VGAFBBUS(uint8_t mul, uint8_t div, uint8_t cs, uint8_t a) : U8X8_VGAFB() {
 	u8x8_t* u8x8 = getU8x8();
 	u8x8_Setup(u8x8, u8x8_d_vgafb_256x256_60Hz_20MHz_generic, u8x8_cad_empty, u8x8_byte_arduino_vgafbbus, u8x8_gpio_and_delay_arduino);
 	VGAFB_HIDE_POINTER(u8x8, vgafb);
-	u8x8_SetPin_VGAFBBUS(u8x8, mul, div, cs, a, reset);
+	u8x8_SetPin_VGAFBBUS(u8x8, mul, div, cs, a);
 }
 
 void U8G2_VGAFB::clearDisplay(void) {
@@ -300,7 +287,7 @@ void U8G2_VGAFB::clear(void) {
 }
 
 
-U8G2_VGAFB_640X480_75Hz_32MHz_GENERIC_1_VGAFBBUS::U8G2_VGAFB_640X480_75Hz_32MHz_GENERIC_1_VGAFBBUS(const u8g2_cb_t *rotation, uint8_t mul, uint8_t div, uint8_t cs, uint8_t b, uint8_t reset) : U8G2_VGAFB()
+U8G2_VGAFB_640X480_75Hz_32MHz_GENERIC_1_VGAFBBUS::U8G2_VGAFB_640X480_75Hz_32MHz_GENERIC_1_VGAFBBUS(const u8g2_cb_t *rotation, uint8_t mul, uint8_t div, uint8_t cs, uint8_t b) : U8G2_VGAFB()
 {
 	u8g2_SetupDisplay(&u8g2, u8x8_d_vgafb_640x480_75Hz_32MHz_generic, u8x8_cad_empty, u8x8_byte_arduino_vgafbbus, u8x8_gpio_and_delay_arduino);
 
@@ -310,9 +297,9 @@ U8G2_VGAFB_640X480_75Hz_32MHz_GENERIC_1_VGAFBBUS::U8G2_VGAFB_640X480_75Hz_32MHz_
 
 	u8x8_t* u8x8 = getU8x8();
 	VGAFB_HIDE_POINTER(u8x8, vgafb);
-	u8x8_SetPin_VGAFBBUS(u8x8, mul, div, cs, b, reset);
+	u8x8_SetPin_VGAFBBUS(u8x8, mul, div, cs, b);
 };
-U8G2_VGAFB_400X300_60Hz_20MHz_GENERIC_1_VGAFBBUS::U8G2_VGAFB_400X300_60Hz_20MHz_GENERIC_1_VGAFBBUS(const u8g2_cb_t *rotation, uint8_t mul, uint8_t div, uint8_t cs, uint8_t a, uint8_t reset) : U8G2_VGAFB()
+U8G2_VGAFB_400X300_60Hz_20MHz_GENERIC_1_VGAFBBUS::U8G2_VGAFB_400X300_60Hz_20MHz_GENERIC_1_VGAFBBUS(const u8g2_cb_t *rotation, uint8_t mul, uint8_t div, uint8_t cs, uint8_t a) : U8G2_VGAFB()
 {
 	u8g2_SetupDisplay(&u8g2, u8x8_d_vgafb_400x300_60Hz_20MHz_generic, u8x8_cad_empty, u8x8_byte_arduino_vgafbbus, u8x8_gpio_and_delay_arduino);
 
@@ -321,9 +308,9 @@ U8G2_VGAFB_400X300_60Hz_20MHz_GENERIC_1_VGAFBBUS::U8G2_VGAFB_400X300_60Hz_20MHz_
 
 	u8x8_t* u8x8 = getU8x8();
 	VGAFB_HIDE_POINTER(u8x8, vgafb);
-	u8x8_SetPin_VGAFBBUS(u8x8, mul, div, cs, a, reset);
+	u8x8_SetPin_VGAFBBUS(u8x8, mul, div, cs, a);
 }
-U8G2_VGAFB_256X256_60Hz_20MHz_GENERIC_1_VGAFBBUS::U8G2_VGAFB_256X256_60Hz_20MHz_GENERIC_1_VGAFBBUS(const u8g2_cb_t *rotation, uint8_t mul, uint8_t div, uint8_t cs, uint8_t a, uint8_t reset) : U8G2_VGAFB()
+U8G2_VGAFB_256X256_60Hz_20MHz_GENERIC_1_VGAFBBUS::U8G2_VGAFB_256X256_60Hz_20MHz_GENERIC_1_VGAFBBUS(const u8g2_cb_t *rotation, uint8_t mul, uint8_t div, uint8_t cs, uint8_t a) : U8G2_VGAFB()
 {	
 	u8g2_SetupDisplay(&u8g2, u8x8_d_vgafb_256x256_60Hz_20MHz_generic, u8x8_cad_empty, u8x8_byte_arduino_vgafbbus, u8x8_gpio_and_delay_arduino);
 
@@ -332,5 +319,5 @@ U8G2_VGAFB_256X256_60Hz_20MHz_GENERIC_1_VGAFBBUS::U8G2_VGAFB_256X256_60Hz_20MHz_
 
 	u8x8_t* u8x8 = getU8x8();
 	VGAFB_HIDE_POINTER(u8x8, vgafb);
-	u8x8_SetPin_VGAFBBUS(u8x8, mul, div, cs, a, reset);
+	u8x8_SetPin_VGAFBBUS(u8x8, mul, div, cs, a);
 }
