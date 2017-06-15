@@ -11,7 +11,6 @@
 
 // Lower for slower SPI speeds, increase for higher speeds. 8 is good for 8MHz SPI clock
 #define VGAFB_MAX_SPI_TRANSACTION_BYTES		8
-#define VGAFB_MAX_SPI_TRANSACTION_WORDS		(VGAFB_MAX_SPI_TRANSACTION_BYTES / 2)
 
 // Set it to how many address bytes memory chip needs. It's usually 2, but can be 3 or 4 too
 #define VGAFB_VRAM_ADDR_LENGTH 2
@@ -24,11 +23,6 @@
 #define VGAFB_VRAM_SIZE 65536
 
 // ===== /configurable part ======
-
-// TODO use better name
-// vgamode_t flags
-#define VGA_INVERTED_VSYNC	1
-#define VGA_INVERTED_HSYNC	2
 
 // defines pins that VgaFB uses and that can't be changed (arduino pin number)
 #define VGA_FIXED_PIN_HSYNC		5
@@ -45,12 +39,17 @@
 #error VGAFB_VRAM_ADDR_LENGTH must be 2, 3 or 4
 #endif
 
+enum vgaflags_t {
+	VGAFLAG_NONE = 0,
+	VGAFLAG_INVERTED_VSYNC = 1,
+	VGAFLAG_INVERTED_HSYNC = 2
+};
 
 typedef struct {
 	uint16_t hVisible, hSyncStart, hSyncEnd, hTotal;
 	uint16_t vVisible, vSyncStart, vSyncEnd, vTotal;
 	uint8_t scanlineHeight; // vmemScaledStride = vmemStride * scanlineHeight
-	uint8_t flags;
+	vgaflags_t flags;
 } vgamode_t;
 
 typedef struct {

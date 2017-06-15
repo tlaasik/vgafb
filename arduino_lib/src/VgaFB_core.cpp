@@ -215,13 +215,13 @@ bool VgaFB_Begin(vgafb_t* vgafb, vgamode_t mode)
 
 	// start the timers
 	////Timer0 mode 7: Fast PWM, top = OCR0A
-	//Timer0::setMode(7, Timer0::PRESCALE_8, mode.flags & VGA_INVERTED_HSYNC
+	//Timer0::setMode(7, Timer0::PRESCALE_8, mode.flags & VGAFLAG_INVERTED_HSYNC
 	//	? Timer0::SET_B_ON_COMPARE : Timer0::CLEAR_B_ON_COMPARE);
 	////Timer1 mode 15: Fast PWM, TOP = OCR1A
-	//Timer1::setMode(15, Timer1::PRESCALE_8, mode.flags & VGA_INVERTED_VSYNC
+	//Timer1::setMode(15, Timer1::PRESCALE_8, mode.flags & VGAFLAG_INVERTED_VSYNC
 	//	? Timer1::SET_B_ON_COMPARE : Timer1::CLEAR_B_ON_COMPARE);
-	uint8_t _0a = _BV(WGM00) | _BV(WGM01) | (mode.flags & VGA_INVERTED_HSYNC ? _BV(COM0B0) | _BV(COM0B1) : _BV(COM0B1));
-	uint8_t _1a = _BV(WGM10) | _BV(WGM11) | (mode.flags & VGA_INVERTED_VSYNC ? _BV(COM1B0) | _BV(COM1B1) : _BV(COM1B1));
+	uint8_t _0a = _BV(WGM00) | _BV(WGM01) | (mode.flags & VGAFLAG_INVERTED_HSYNC ? _BV(COM0B0) | _BV(COM0B1) : _BV(COM0B1));
+	uint8_t _1a = _BV(WGM10) | _BV(WGM11) | (mode.flags & VGAFLAG_INVERTED_VSYNC ? _BV(COM1B0) | _BV(COM1B1) : _BV(COM1B1));
 	GTCCR |= _BV(PSRASY); // reset prescaler by setting a bit right before starting the timers
 	TCCR0A = _0a;
 	TCCR1A = _1a;
