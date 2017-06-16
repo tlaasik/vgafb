@@ -31,37 +31,55 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #include <SPI.h>
 
 
-VgaFB::VgaFB(uint8_t mul, uint8_t div, uint8_t cs_pin, uint8_t ab_pin) {
-	VgaFB_ConfigBoard(&vgafb, mul, div, cs_pin, ab_pin);
+VgaFB::VgaFB(uint8_t mul, uint8_t div, uint8_t cs_pin, uint8_t ab_pin)
+{
+	vgafb = new vgafb_t; // if it fails, then contructor is not called, but that's ok
+	ownsVgafb = true;
+	VgaFB_ConfigBoard(vgafb, mul, div, cs_pin, ab_pin);
 }
+VgaFB::~VgaFB()
+{
+	if (ownsVgafb)
+		delete vgafb;
+}
+VgaFB::VgaFB(vgafb_t* vgafb)
+{
+	this->vgafb = vgafb;
+	ownsVgafb = false;
+}
+vgafb_t* VgaFB::getVgaFB()
+{
+	return vgafb;
+}
+
 void VgaFB::Begin(vgamode_t mode) {
-	VgaFB_Begin(&vgafb, mode);
+	VgaFB_Begin(vgafb, mode);
 }
 void VgaFB::End() {
-	VgaFB_End(&vgafb);
+	VgaFB_End(vgafb);
 }
 void VgaFB::Enable() {
-	VgaFB_DisplayEnabled(&vgafb, true);
+	VgaFB_DisplayEnabled(vgafb, true);
 }
 void VgaFB::Disable() {
-	VgaFB_DisplayEnabled(&vgafb, false);
+	VgaFB_DisplayEnabled(vgafb, false);
 }
 void VgaFB::Clear() {
-	VgaFB_Clear(&vgafb);
+	VgaFB_Clear(vgafb);
 }
 void VgaFB::Scroll(int16_t delta) {
-	VgaFB_Scroll(&vgafb, delta);
+	VgaFB_Scroll(vgafb, delta);
 }
 uint16_t VgaFB::Width() {
-	return vgafb.mode.hVisible;
+	return vgafb->mode.hVisible;
 }
 uint16_t VgaFB::Height() {
-	return vgafb.vVisibleScaled;
+	return vgafb->vVisibleScaled;
 }
 void VgaFB::ClearLine(uint16_t line) {
-	if (line >= vgafb.vVisibleScaled)
+	if (line >= vgafb->vVisibleScaled)
 		return;
-	VgaFB_Write(&vgafb, vgafb.vmemFirstPixelOffset + line * vgafb.vmemScaledStride, 0, vgafb.vmemScaledStride);
+	VgaFB_Write(vgafb, vgafb->vmemFirstPixelOffset + line * vgafb->vmemScaledStride, 0, vgafb->vmemScaledStride);
 }
 
 
@@ -85,9 +103,9 @@ void VgaFB::BlitAlignedBytes(uint_vgafb_t offset, uint8_t* bytes, uint8_t byteCo
 	}
 
 	if (blit >= BLIT_INV || (startSkipBits | endSkipBits))
-		VgaFB_Read(&vgafb, offset, buf, byteCount);
+		VgaFB_Read(vgafb, offset, buf, byteCount);
 
-	uint8_t i = vgafb.mode.scanlineHeight;
+	uint8_t i = vgafb->mode.scanlineHeight;
 	while (i--)
 	{
 		switch (blit) {
@@ -125,20 +143,20 @@ void VgaFB::BlitAlignedBytes(uint_vgafb_t offset, uint8_t* bytes, uint8_t byteCo
 			break;
 		}
 
-		VgaFB_Write(&vgafb, offset, buf, byteCount);
+		VgaFB_Write(vgafb, offset, buf, byteCount);
 
-		offset += vgafb.vmemStride;
+		offset += vgafb->vmemStride;
 	}
 
 	// approximation
 	if (blit == BLIT_CLEAR) {
-		offset -= vgafb.vmemStride;
+		offset -= vgafb->vmemStride;
 	}
 	else {
-		offset -= vgafb.vmemStride + byteCount;
+		offset -= vgafb->vmemStride + byteCount;
 	}
-	if (offset > vgafb.vmemLastPixelOffset)
-		vgafb.vmemLastPixelOffset = offset;
+	if (offset > vgafb->vmemLastPixelOffset)
+		vgafb->vmemLastPixelOffset = offset;
 }
 
 // arg restrictions (if not followed buffer overrun will occur):
@@ -198,10 +216,10 @@ void VgaFB::Blit(uint8_t* bitmap, int16_t sx, int16_t sy, int16_t w, int16_t h, 
 		bx = -sx;
 		sx = 0;
 	}
-	else if (sx >= vgafb.mode.hVisible) return; // all bitmap pixels are right from screen edge
+	else if (sx >= vgafb->mode.hVisible) return; // all bitmap pixels are right from screen edge
 	// right clamping
-	if (sx + w > vgafb.mode.hVisible)
-		w = vgafb.mode.hVisible - sx;
+	if (sx + w > vgafb->mode.hVisible)
+		w = vgafb->mode.hVisible - sx;
 
 	// top clamping
 	if (sy < 0) {
@@ -210,17 +228,17 @@ void VgaFB::Blit(uint8_t* bitmap, int16_t sx, int16_t sy, int16_t w, int16_t h, 
 		by = -sy;
 		sy = 0;
 	}
-	else if (sy >= vgafb.vVisibleScaled) return; // all bitmap pixels are bottom from screen edge
+	else if (sy >= vgafb->vVisibleScaled) return; // all bitmap pixels are bottom from screen edge
 	// bottom clamping
-	if (sy + h > vgafb.vVisibleScaled)
-		h = vgafb.vVisibleScaled - sy;
+	if (sy + h > vgafb->vVisibleScaled)
+		h = vgafb->vVisibleScaled - sy;
 
 	for (int16_t y = 0; y < h; y++)
 	{
 		int16_t csy = sy + y;
 		int16_t cby = by + y;
 
-		uint_vgafb_t sOffset = vgafb.vmemFirstPixelOffset + (uint16_t)csy * vgafb.vmemScaledStride + ((uint16_t)sx >> 3);
+		uint_vgafb_t sOffset = vgafb->vmemFirstPixelOffset + (uint16_t)csy * vgafb->vmemScaledStride + ((uint16_t)sx >> 3);
 		uint8_t sBitOffset = sx & 0x07;
 
 		// XXX can't use the same technique for reducing integer sizes as with screen, because

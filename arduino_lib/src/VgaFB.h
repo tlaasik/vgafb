@@ -48,12 +48,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 class VgaFB
 {
-protected:
-	vgafb_t vgafb;
+private:
+	vgafb_t* vgafb;
+	bool ownsVgafb;
 public:
 	uint16_t x, y;
 
 	VgaFB(uint8_t mul, uint8_t div, uint8_t cs_pin, uint8_t ab_pin);
+	VgaFB(vgafb_t* vgafb);
+	~VgaFB();
+	vgafb_t* getVgaFB();
 
 	void Begin(vgamode_t mode);
 	void End();
