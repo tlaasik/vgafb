@@ -29,8 +29,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #ifndef _VGAFB_GFX_H
 #define _VGAFB_GFX_H
 
-#include <VgaFB_core.h>
+#include <stdint.h>
 #include <Adafruit_GFX.h>
+#include "VgaFB_core.h"
 
 class VgaFB_GFX : public Adafruit_GFX {
 private:

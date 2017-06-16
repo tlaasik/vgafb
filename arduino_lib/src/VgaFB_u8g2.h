@@ -29,14 +29,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #ifndef _VGAFB_U8G2_H
 #define _VGAFB_U8G2_H
 
+#include <stdint.h>
 #include <U8x8lib.h>
 #include <U8g2lib.h>
-#include <VgaFB_core.h>
+#include "VgaFB_core.h""
 
-// hide vgafb 16bit pointer into i2c_address and i2c_started.
-// u8x8_t should really have void* that can point to additional state object like vgafb_t
-#define VGAFB_HIDE_POINTER(u8x8, vgafb) *((uint16_t *)&(u8x8)->i2c_address) = (uint16_t)(vgafb)
-#define VGAFB_UNHIDE_POINTER(u8x8) (vgafb_t *)(*((uint16_t *)&(u8x8)->i2c_address))
 
 class U8X8_VGAFB : public U8X8 {
 private:

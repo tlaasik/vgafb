@@ -27,8 +27,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 -------------------------------------------------------------------------------
 */
 #include "stdint.h"
-#include "VgaFB_core.h"
 #include <SPI.h>
+#include "VgaFB_core.h"
 //not using TimerHelpers.h by Nick Gammon any more (http://www.gammon.com.au/forum/?id=11504)
 
 

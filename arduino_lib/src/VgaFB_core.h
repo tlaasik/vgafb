@@ -44,7 +44,7 @@ VgaFB_End(&v);
 #ifndef _VGAFB_CORE_H
 #define _VGAFB_CORE_H
 
-#include <Arduino.h>
+#include <stdint.h>
 #include <SPI.h>
 
 

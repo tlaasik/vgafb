@@ -26,68 +26,72 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 -------------------------------------------------------------------------------
 */
-#include "stdint.h"
+#include <stdint.h>
+#include "VgaFB_core.h"
 #include "VgaFB.h"
-#include <SPI.h>
 
-
-VgaFB::VgaFB(uint8_t mul, uint8_t div, uint8_t cs_pin, uint8_t ab_pin)
-{
+VgaFB::VgaFB(uint8_t mul, uint8_t div, uint8_t cs_pin, uint8_t ab_pin) {
 	vgafb = new vgafb_t; // if it fails, then contructor is not called, but that's ok
 	ownsVgafb = true;
 	VgaFB_ConfigBoard(vgafb, mul, div, cs_pin, ab_pin);
 }
-VgaFB::~VgaFB()
-{
+VgaFB::~VgaFB() {
 	if (ownsVgafb)
 		delete vgafb;
 }
-VgaFB::VgaFB(vgafb_t* vgafb)
-{
+VgaFB::VgaFB(vgafb_t* vgafb) {
 	this->vgafb = vgafb;
 	ownsVgafb = false;
 }
-vgafb_t* VgaFB::getVgaFB()
-{
+vgafb_t* VgaFB::getVgaFB() {
 	return vgafb;
 }
 
-void VgaFB::Begin(vgamode_t mode) {
+void VgaFB::begin(vgamode_t mode) {
 	VgaFB_Begin(vgafb, mode);
 }
-void VgaFB::End() {
+void VgaFB::end() {
 	VgaFB_End(vgafb);
 }
-void VgaFB::Enable() {
+
+void VgaFB::enable() {
 	VgaFB_DisplayEnabled(vgafb, true);
 }
-void VgaFB::Disable() {
+void VgaFB::disable() {
 	VgaFB_DisplayEnabled(vgafb, false);
 }
-void VgaFB::Clear() {
+
+void VgaFB::clear() {
 	VgaFB_Clear(vgafb);
 }
-void VgaFB::Scroll(int16_t delta) {
-	VgaFB_Scroll(vgafb, delta);
-}
-uint16_t VgaFB::Width() {
-	return vgafb->mode.hVisible;
-}
-uint16_t VgaFB::Height() {
-	return vgafb->vVisibleScaled;
-}
-void VgaFB::ClearLine(uint16_t line) {
+void VgaFB::clearLine(uint16_t line) {
 	if (line >= vgafb->vVisibleScaled)
 		return;
 	VgaFB_Write(vgafb, vgafb->vmemFirstPixelOffset + line * vgafb->vmemScaledStride, 0, vgafb->vmemScaledStride);
 }
+void VgaFB::scroll(int16_t delta) {
+	VgaFB_Scroll(vgafb, delta);
+}
 
+uint16_t VgaFB::getWidth() {
+	return vgafb->mode.hVisible;
+}
+uint16_t VgaFB::getHeight() {
+	return vgafb->vVisibleScaled;
+}
+
+void VgaFB::setPixel(int16_t x, int16_t y, uint8_t pixel) {
+	VgaFB_SetPixel(vgafb, x, y, pixel);
+}
+uint8_t VgaFB::getPixel(int16_t x, int16_t y) {
+	return VgaFB_GetPixel(vgafb, x, y);
+}
 
 // arg restrictions (if not followed buffer overrun will occur):
 //  startSkipBits 0..7
 //  endSkipBits 0..7
 //  byteCount 0..BLIT_MAX_BYTES
-void VgaFB::BlitAlignedBytes(uint_vgafb_t offset, uint8_t* bytes, uint8_t byteCount, uint8_t startSkipBits, uint8_t endSkipBits, byte blit)
+void VgaFB::blitAlignedBytes(uint_vgafb_t offset, uint8_t* bytes, uint8_t byteCount, uint8_t startSkipBits, uint8_t endSkipBits, uint8_t blit)
 {
 	if (byteCount <= 0) return;
 
@@ -163,7 +167,7 @@ void VgaFB::BlitAlignedBytes(uint_vgafb_t offset, uint8_t* bytes, uint8_t byteCo
 //  sBitOffset 0..7
 //  lineBitOffset 0..7
 //  bitCount 0..BLIT_MAX_BITS
-void VgaFB::BlitBits(uint_vgafb_t screenOffset, uint8_t screenBitOffset, uint8_t* line, uint8_t lineBitOffset, uint8_t bitCount, byte blit)
+void VgaFB::blitBits(uint_vgafb_t screenOffset, uint8_t screenBitOffset, uint8_t* line, uint8_t lineBitOffset, uint8_t bitCount, uint8_t blit)
 {
 	if (bitCount <= 0) return;
 
@@ -195,10 +199,10 @@ void VgaFB::BlitBits(uint_vgafb_t screenOffset, uint8_t screenBitOffset, uint8_t
 	}
 
 	uint8_t endSkipBits = (byteCount << 3) - (screenBitOffset + bitCount);
-	BlitAlignedBytes(screenOffset, bitbufPtr, byteCount, screenBitOffset, endSkipBits, blit);
+	blitAlignedBytes(screenOffset, bitbufPtr, byteCount, screenBitOffset, endSkipBits, blit);
 }
 
-void VgaFB::Blit(uint8_t* bitmap, int16_t sx, int16_t sy, int16_t w, int16_t h, uint8_t blit)
+void VgaFB::blit(uint8_t* bitmap, int16_t sx, int16_t sy, int16_t w, int16_t h, uint8_t blit)
 {
 	// return if there are no pixels to blit
 	if (w <= 0 || h <= 0)
@@ -249,7 +253,7 @@ void VgaFB::Blit(uint8_t* bitmap, int16_t sx, int16_t sy, int16_t w, int16_t h, 
 		int16_t ww = w;
 		while (ww > 0) {
 			uint8_t www = ww > 64 ? 64 : ww;
-			BlitBits(sOffset, sBitOffset, bitmap + (bBitPtr >> 3), bBitPtr & 0x07, www, blit);
+			blitBits(sOffset, sBitOffset, bitmap + (bBitPtr >> 3), bBitPtr & 0x07, www, blit);
 			sOffset += 8;
 			bBitPtr += 64;
 			ww -= 64;

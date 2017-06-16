@@ -29,9 +29,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #ifndef _VGAFB_H
 #define _VGAFB_H
 
-#include <VgaFB_core.h>
-#include <Arduino.h>
-#include <SPI.h>
+#include <stdint.h>
+#include "VgaFB_core.h"
 
 // first 4 don't need reading back
 #define BLIT_CLEAR	0
@@ -51,6 +50,8 @@ class VgaFB
 private:
 	vgafb_t* vgafb;
 	bool ownsVgafb;
+	void blitAlignedBytes(uint_vgafb_t offset, uint8_t* bytes, uint8_t byteCount, uint8_t startSkipBits, uint8_t endSkipBits, uint8_t blit);
+	void blitBits(uint_vgafb_t screenOffset, uint8_t screenBitOffset, uint8_t* line, uint8_t lineBitOffset, uint8_t bitCount, uint8_t blit);
 public:
 	uint16_t x, y;
 
@@ -59,21 +60,23 @@ public:
 	~VgaFB();
 	vgafb_t* getVgaFB();
 
-	void Begin(vgamode_t mode);
-	void End();
-	void Enable();
-	void Disable();
-	void Clear();
-	void Scroll(int16_t delta);
+	void begin(vgamode_t mode);
+	void end();
 
-	uint16_t Width();
-	uint16_t Height();
+	void enable();
+	void disable();
+
+	void clear();
+	void clearLine(uint16_t line);
+	void scroll(int16_t delta);
+
+	uint16_t getWidth();
+	uint16_t getHeight();
+
+	void setPixel(int16_t x, int16_t y, uint8_t pixel);
+	uint8_t getPixel(int16_t x, int16_t y);
 	
-	void ClearLine(uint16_t line);
-
-	void BlitAlignedBytes(uint_vgafb_t offset, uint8_t* bytes, uint8_t byteCount, uint8_t startSkipBits, uint8_t endSkipBits, byte blit);
-	void BlitBits(uint_vgafb_t screenOffset, uint8_t screenBitOffset, uint8_t* line, uint8_t lineBitOffset, uint8_t bitCount, byte blit);
-	void Blit(uint8_t* bitmap, int16_t sx, int16_t sy, int16_t w, int16_t h, uint8_t blit);
+	void blit(uint8_t* bitmap, int16_t sx, int16_t sy, int16_t w, int16_t h, uint8_t blit);
 
 	//void setFont(const uint8_t *font_8x8)
 	//void drawGlyph(uint8_t x, uint8_t y, uint8_t encoding)
