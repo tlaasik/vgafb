@@ -32,7 +32,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #include <stdint.h>
 #include <U8x8lib.h>
 #include <U8g2lib.h>
-#include "VgaFB_core.h""
+#include "VgaFB_core.h"
 
 
 class U8X8_VGAFB : public U8X8 {
@@ -47,9 +47,9 @@ public:
 
 	vgafb_t* getVgaFB();
 	void clearLine(uint8_t line);
-	void clearDisplay(void);
+	void clearDisplay();
 	// needed to override this too or otherwise clear() would call base class clearDisplay() instead
-	void clear(void);
+	void clear();
 	void scroll(int8_t tileDelta);
 };
 

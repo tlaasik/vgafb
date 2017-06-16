@@ -90,13 +90,13 @@ uint8_t VgaFB::getPixel(int16_t x, int16_t y) {
 // arg restrictions (if not followed buffer overrun will occur):
 //  startSkipBits 0..7
 //  endSkipBits 0..7
-//  byteCount 0..BLIT_MAX_BYTES
-void VgaFB::blitAlignedBytes(uint_vgafb_t offset, uint8_t* bytes, uint8_t byteCount, uint8_t startSkipBits, uint8_t endSkipBits, uint8_t blit)
+//  byteCount 0..VGAFB_MAX_SPI_TRANSACTION_BYTES
+void VgaFB::blitAlignedBytes(uint_vgafb_t offset, uint8_t* bytes, uint8_t byteCount, uint8_t startSkipBits, uint8_t endSkipBits, blitmode_t blit)
 {
 	if (byteCount <= 0) return;
 
-	uint8_t buf[BLIT_MAX_BYTES];
-	uint8_t mask[BLIT_MAX_BYTES]; // only used when startSkipBits or endSkipBits are set
+	uint8_t buf[VGAFB_MAX_SPI_TRANSACTION_BYTES];
+	uint8_t mask[VGAFB_MAX_SPI_TRANSACTION_BYTES]; // only used when startSkipBits or endSkipBits are set
 
 	// build mask
 	register uint8_t c = byteCount;
@@ -166,12 +166,12 @@ void VgaFB::blitAlignedBytes(uint_vgafb_t offset, uint8_t* bytes, uint8_t byteCo
 // arg restrictions (if not followed buffer overrun will occur):
 //  sBitOffset 0..7
 //  lineBitOffset 0..7
-//  bitCount 0..BLIT_MAX_BITS
-void VgaFB::blitBits(uint_vgafb_t screenOffset, uint8_t screenBitOffset, uint8_t* line, uint8_t lineBitOffset, uint8_t bitCount, uint8_t blit)
+//  bitCount 0..((VGAFB_MAX_SPI_TRANSACTION_BYTES - 1) * 8)
+void VgaFB::blitBits(uint_vgafb_t screenOffset, uint8_t screenBitOffset, uint8_t* line, uint8_t lineBitOffset, uint8_t bitCount, blitmode_t blit)
 {
 	if (bitCount <= 0) return;
 
-	uint8_t bitbuf[BLIT_MAX_BYTES];
+	uint8_t bitbuf[VGAFB_MAX_SPI_TRANSACTION_BYTES];
 	uint8_t* bitbufPtr = bitbuf;
 	uint8_t byteCount = ((screenBitOffset + bitCount - 1) >> 3) + 1;
 
@@ -202,7 +202,7 @@ void VgaFB::blitBits(uint_vgafb_t screenOffset, uint8_t screenBitOffset, uint8_t
 	blitAlignedBytes(screenOffset, bitbufPtr, byteCount, screenBitOffset, endSkipBits, blit);
 }
 
-void VgaFB::blit(uint8_t* bitmap, int16_t sx, int16_t sy, int16_t w, int16_t h, uint8_t blit)
+void VgaFB::blit(uint8_t* bitmap, int16_t sx, int16_t sy, int16_t w, int16_t h, blitmode_t blit)
 {
 	// return if there are no pixels to blit
 	if (w <= 0 || h <= 0)

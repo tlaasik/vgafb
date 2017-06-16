@@ -39,6 +39,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #define VGAFB_UNHIDE_POINTER(u8x8) (vgafb_t *)(*((uint16_t *)&(u8x8)->i2c_address))
 
 
+// -------------------------------- C part --------------------------------
+
 static uint8_t u8x8_d_vgafb_generic(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, void *arg_ptr)
 {
 	uint8_t *tilePtr;
@@ -263,6 +265,9 @@ uint8_t u8x8_d_vgafb_256x256_60Hz_20MHz(u8x8_t *u8x8, uint8_t msg, uint8_t arg_i
 	return 0;
 }
 
+
+// -------------------------------- U8X8 part --------------------------------
+
 U8X8_VGAFB::U8X8_VGAFB(uint8_t mul, uint8_t div, uint8_t cs, uint8_t ab, u8x8_msg_cb display_cb) {
 	this->vgafb = new vgafb_t;
 	this->ownsVgafb = true;
@@ -309,6 +314,8 @@ void U8X8_VGAFB::scroll(int8_t tileDelta) {
 	VgaFB_Scroll(vgafb, tileDelta << 3);
 }
 
+// -------------------------------- U8X8 modes --------------------------------
+
 U8X8_VGAFB_640X480_75Hz_32MHz::U8X8_VGAFB_640X480_75Hz_32MHz(uint8_t mul, uint8_t div, uint8_t cs, uint8_t b)
 	: U8X8_VGAFB(mul, div, cs, b, u8x8_d_vgafb_640x480_75Hz_32MHz) {}
 U8X8_VGAFB_640X480_75Hz_32MHz::U8X8_VGAFB_640X480_75Hz_32MHz(vgafb_t* vgafb)
@@ -324,6 +331,8 @@ U8X8_VGAFB_256X256_60Hz_20MHz::U8X8_VGAFB_256X256_60Hz_20MHz(uint8_t mul, uint8_
 U8X8_VGAFB_256X256_60Hz_20MHz::U8X8_VGAFB_256X256_60Hz_20MHz(vgafb_t* vgafb)
 	: U8X8_VGAFB(vgafb, u8x8_d_vgafb_256x256_60Hz_20MHz) {}
 
+
+// -------------------------------- U8g2 part --------------------------------
 
 U8G2_VGAFB::U8G2_VGAFB(uint8_t mul, uint8_t div, uint8_t cs, uint8_t ab, const u8g2_cb_t *rotation, u8x8_msg_cb display_cb, uint8_t* buf) {
 	this->vgafb = new vgafb_t;
@@ -363,6 +372,8 @@ void U8G2_VGAFB::clear() {
 	home(); clearDisplay(); clearBuffer();
 }
 
+
+// -------------------------------- U8g2 modes --------------------------------
 
 U8G2_VGAFB_640X480_75Hz_32MHz_1::U8G2_VGAFB_640X480_75Hz_32MHz_1(const u8g2_cb_t *rotation, uint8_t mul, uint8_t div, uint8_t cs, uint8_t b)
 	: U8G2_VGAFB(mul, div, cs, b, rotation, u8x8_d_vgafb_640x480_75Hz_32MHz, buf) {}
