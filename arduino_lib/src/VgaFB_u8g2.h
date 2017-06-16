@@ -39,10 +39,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #define VGAFB_UNHIDE_POINTER(u8x8) (vgafb_t *)(*((uint16_t *)&(u8x8)->i2c_address))
 
 class U8X8_VGAFB : public U8X8 {
-protected:
+private:
 	vgafb_t* vgafb;
+	bool ownsVgafb;
+	void init(u8x8_msg_cb display_cb);
 public:
-	vgafb_t* getVgaFB() { return vgafb; };
+	U8X8_VGAFB(uint8_t mul, uint8_t div, uint8_t cs, uint8_t ab, u8x8_msg_cb display_cb);
+	U8X8_VGAFB(vgafb_t* vgafb, u8x8_msg_cb display_cb);
+	~U8X8_VGAFB();
+
+	vgafb_t* getVgaFB();
 	void clearLine(uint8_t line);
 	void clearDisplay(void);
 	// needed to override this too or otherwise clear() would call base class clearDisplay() instead
@@ -51,31 +57,36 @@ public:
 };
 
 class U8X8_VGAFB_640X480_75Hz_32MHz : public U8X8_VGAFB {
-public: U8X8_VGAFB_640X480_75Hz_32MHz(uint8_t mul, uint8_t div, uint8_t cs, uint8_t b);
+public:
+	U8X8_VGAFB_640X480_75Hz_32MHz(uint8_t mul, uint8_t div, uint8_t cs, uint8_t b);
+	U8X8_VGAFB_640X480_75Hz_32MHz(vgafb_t* vgafb);
 };
 class U8X8_VGAFB_400X300_60Hz_20MHz : public U8X8_VGAFB {
-public: U8X8_VGAFB_400X300_60Hz_20MHz(uint8_t mul, uint8_t div, uint8_t cs, uint8_t a);
+public:
+	U8X8_VGAFB_400X300_60Hz_20MHz(uint8_t mul, uint8_t div, uint8_t cs, uint8_t a);
+	U8X8_VGAFB_400X300_60Hz_20MHz(vgafb_t* vgafb);
 };
 class U8X8_VGAFB_256X256_60Hz_20MHz : public U8X8_VGAFB {
-public: U8X8_VGAFB_256X256_60Hz_20MHz(uint8_t mul, uint8_t div, uint8_t cs, uint8_t a);
+public:
+	U8X8_VGAFB_256X256_60Hz_20MHz(uint8_t mul, uint8_t div, uint8_t cs, uint8_t a);
+	U8X8_VGAFB_256X256_60Hz_20MHz(vgafb_t* vgafb);
 };
 
 class U8G2_VGAFB : public U8G2 {
-protected:
+private:
 	vgafb_t* vgafb;
 	bool ownsVgafb;
-private:
 	void init(const u8g2_cb_t *rotation, u8x8_msg_cb display_cb, uint8_t* buf);
 public:
 	U8G2_VGAFB(uint8_t mul, uint8_t div, uint8_t cs, uint8_t ab, const u8g2_cb_t *rotation, u8x8_msg_cb display_cb, uint8_t* buf);
 	U8G2_VGAFB(vgafb_t* vgafb, const u8g2_cb_t *rotation, u8x8_msg_cb display_cb, uint8_t* buf);
 	~U8G2_VGAFB();
 
-	vgafb_t* getVgaFB() { return vgafb; };
-	void begin(void);
-	void clearDisplay(void);
+	vgafb_t* getVgaFB();
+	void begin();
+	void clearDisplay();
 	// needed to override this too or otherwise clear() would call base class clearDisplay() instead
-	void clear(void);
+	void clear();
 };
 
 class U8G2_VGAFB_640X480_75Hz_32MHz_1 : public U8G2_VGAFB {

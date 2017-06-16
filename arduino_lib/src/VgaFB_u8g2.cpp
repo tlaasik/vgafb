@@ -254,12 +254,30 @@ uint8_t u8x8_d_vgafb_256x256_60Hz_20MHz(u8x8_t *u8x8, uint8_t msg, uint8_t arg_i
 	return 0;
 }
 
-void u8x8_SetPin_VGAFBBUS(u8x8_t *u8x8, uint8_t mul, uint8_t div, uint8_t cs, uint8_t ab)
-{
-	vgafb_t* vgafb = VGAFB_UNHIDE_POINTER(u8x8);
+U8X8_VGAFB::U8X8_VGAFB(uint8_t mul, uint8_t div, uint8_t cs, uint8_t ab, u8x8_msg_cb display_cb) {
+	this->vgafb = new vgafb_t;
+	this->ownsVgafb = true;
 	VgaFB_ConfigBoard(vgafb, mul, div, cs, ab);
+	init(display_cb);
+}
+U8X8_VGAFB::U8X8_VGAFB(vgafb_t* vgafb, u8x8_msg_cb display_cb) {
+	this->vgafb = vgafb;
+	this->ownsVgafb = false;
+	init(display_cb);
+}
+void U8X8_VGAFB::init(u8x8_msg_cb display_cb) {
+	u8x8_t* u8x8 = getU8x8();
+	u8x8_Setup(u8x8, display_cb, u8x8_cad_empty, u8x8_byte_arduino_vgafbbus, u8x8_gpio_and_delay_arduino);
+	VGAFB_HIDE_POINTER(u8x8, vgafb);
+}
+U8X8_VGAFB::~U8X8_VGAFB() {
+	if (ownsVgafb)
+		delete this->vgafb;
 }
 
+vgafb_t* U8X8_VGAFB::getVgaFB() {
+	return vgafb;
+}
 void U8X8_VGAFB::clearLine(uint8_t line) {
 	// can do better than u8x8_ClearLine(&u8x8, line)
 	if (line >= u8x8.display_info->tile_height)
@@ -282,37 +300,31 @@ void U8X8_VGAFB::scroll(int8_t tileDelta) {
 	VgaFB_Scroll(vgafb, tileDelta << 3);
 }
 
-U8X8_VGAFB_640X480_75Hz_32MHz::U8X8_VGAFB_640X480_75Hz_32MHz(uint8_t mul, uint8_t div, uint8_t cs, uint8_t b) : U8X8_VGAFB() {
-	u8x8_t* u8x8 = getU8x8();
-	u8x8_Setup(u8x8, u8x8_d_vgafb_640x480_75Hz_32MHz, u8x8_cad_empty, u8x8_byte_arduino_vgafbbus, u8x8_gpio_and_delay_arduino);
-	VGAFB_HIDE_POINTER(u8x8, vgafb);
-	u8x8_SetPin_VGAFBBUS(u8x8, mul, div, cs, b);
-}
-U8X8_VGAFB_400X300_60Hz_20MHz::U8X8_VGAFB_400X300_60Hz_20MHz(uint8_t mul, uint8_t div, uint8_t cs, uint8_t a) : U8X8_VGAFB() {
-	u8x8_t* u8x8 = getU8x8();
-	u8x8_Setup(u8x8, u8x8_d_vgafb_400x300_60Hz_20MHz, u8x8_cad_empty, u8x8_byte_arduino_vgafbbus, u8x8_gpio_and_delay_arduino);
-	VGAFB_HIDE_POINTER(u8x8, vgafb);
-	u8x8_SetPin_VGAFBBUS(u8x8, mul, div, cs, a);
-}
-U8X8_VGAFB_256X256_60Hz_20MHz::U8X8_VGAFB_256X256_60Hz_20MHz(uint8_t mul, uint8_t div, uint8_t cs, uint8_t a) : U8X8_VGAFB() {
-	u8x8_t* u8x8 = getU8x8();
-	u8x8_Setup(u8x8, u8x8_d_vgafb_256x256_60Hz_20MHz, u8x8_cad_empty, u8x8_byte_arduino_vgafbbus, u8x8_gpio_and_delay_arduino);
-	VGAFB_HIDE_POINTER(u8x8, vgafb);
-	u8x8_SetPin_VGAFBBUS(u8x8, mul, div, cs, a);
-}
+U8X8_VGAFB_640X480_75Hz_32MHz::U8X8_VGAFB_640X480_75Hz_32MHz(uint8_t mul, uint8_t div, uint8_t cs, uint8_t b)
+	: U8X8_VGAFB(mul, div, cs, b, u8x8_d_vgafb_640x480_75Hz_32MHz) {}
+U8X8_VGAFB_640X480_75Hz_32MHz::U8X8_VGAFB_640X480_75Hz_32MHz(vgafb_t* vgafb)
+	: U8X8_VGAFB(vgafb, u8x8_d_vgafb_640x480_75Hz_32MHz) {}
+
+U8X8_VGAFB_400X300_60Hz_20MHz::U8X8_VGAFB_400X300_60Hz_20MHz(uint8_t mul, uint8_t div, uint8_t cs, uint8_t a)
+	: U8X8_VGAFB(mul, div, cs, a, u8x8_d_vgafb_400x300_60Hz_20MHz) {}
+U8X8_VGAFB_400X300_60Hz_20MHz::U8X8_VGAFB_400X300_60Hz_20MHz(vgafb_t* vgafb)
+	: U8X8_VGAFB(vgafb, u8x8_d_vgafb_400x300_60Hz_20MHz) {}
+
+U8X8_VGAFB_256X256_60Hz_20MHz::U8X8_VGAFB_256X256_60Hz_20MHz(uint8_t mul, uint8_t div, uint8_t cs, uint8_t a)
+	: U8X8_VGAFB(mul, div, cs, a, u8x8_d_vgafb_256x256_60Hz_20MHz) {}
+U8X8_VGAFB_256X256_60Hz_20MHz::U8X8_VGAFB_256X256_60Hz_20MHz(vgafb_t* vgafb)
+	: U8X8_VGAFB(vgafb, u8x8_d_vgafb_256x256_60Hz_20MHz) {}
 
 
-U8G2_VGAFB::U8G2_VGAFB(vgafb_t* vgafb, const u8g2_cb_t *rotation, u8x8_msg_cb display_cb, uint8_t* buf)
-{
-	this->vgafb = vgafb;
-	this->ownsVgafb = false;
-	init(rotation, display_cb, buf);
-}
-U8G2_VGAFB::U8G2_VGAFB(uint8_t mul, uint8_t div, uint8_t cs, uint8_t ab, const u8g2_cb_t *rotation, u8x8_msg_cb display_cb, uint8_t* buf)
-{
+U8G2_VGAFB::U8G2_VGAFB(uint8_t mul, uint8_t div, uint8_t cs, uint8_t ab, const u8g2_cb_t *rotation, u8x8_msg_cb display_cb, uint8_t* buf) {
 	this->vgafb = new vgafb_t;
 	this->ownsVgafb = true;
 	VgaFB_ConfigBoard(vgafb, mul, div, cs, ab);
+	init(rotation, display_cb, buf);
+}
+U8G2_VGAFB::U8G2_VGAFB(vgafb_t* vgafb, const u8g2_cb_t *rotation, u8x8_msg_cb display_cb, uint8_t* buf) {
+	this->vgafb = vgafb;
+	this->ownsVgafb = false;
 	init(rotation, display_cb, buf);
 }
 void U8G2_VGAFB::init(const u8g2_cb_t *rotation, u8x8_msg_cb display_cb, uint8_t* buf) {
@@ -327,36 +339,33 @@ U8G2_VGAFB::~U8G2_VGAFB() {
 	if (ownsVgafb)
 		delete this->vgafb;
 }
-void U8G2_VGAFB::clearDisplay(void) {
+void U8G2_VGAFB::clearDisplay() {
 	// can do much better than u8g2_ClearDisplay(&u8g2)
 	VgaFB_Clear(vgafb);
 }
+vgafb_t* U8G2_VGAFB::getVgaFB() {
+	return vgafb;
+}
 // needed to override begin() and clear() or otherwise clear() would call base class clearDisplay() instead
-void U8G2_VGAFB::begin(void) {
+void U8G2_VGAFB::begin() {
 	initDisplay(); clearDisplay(); setPowerSave(0);
 }
-void U8G2_VGAFB::clear(void) {
+void U8G2_VGAFB::clear() {
 	home(); clearDisplay(); clearBuffer();
 }
 
 
 U8G2_VGAFB_640X480_75Hz_32MHz_1::U8G2_VGAFB_640X480_75Hz_32MHz_1(const u8g2_cb_t *rotation, uint8_t mul, uint8_t div, uint8_t cs, uint8_t b)
-	: U8G2_VGAFB(mul, div, cs, b, rotation, u8x8_d_vgafb_640x480_75Hz_32MHz, buf)
-{}
+	: U8G2_VGAFB(mul, div, cs, b, rotation, u8x8_d_vgafb_640x480_75Hz_32MHz, buf) {}
 U8G2_VGAFB_640X480_75Hz_32MHz_1::U8G2_VGAFB_640X480_75Hz_32MHz_1(const u8g2_cb_t *rotation, vgafb_t* vgafb)
-	: U8G2_VGAFB(vgafb, rotation, u8x8_d_vgafb_640x480_75Hz_32MHz, buf)
-{}
+	: U8G2_VGAFB(vgafb, rotation, u8x8_d_vgafb_640x480_75Hz_32MHz, buf) {}
 
 U8G2_VGAFB_400X300_60Hz_20MHz_1::U8G2_VGAFB_400X300_60Hz_20MHz_1(const u8g2_cb_t *rotation, uint8_t mul, uint8_t div, uint8_t cs, uint8_t a)
-	: U8G2_VGAFB(mul, div, cs, a, rotation, u8x8_d_vgafb_400x300_60Hz_20MHz, buf)
-{}
+	: U8G2_VGAFB(mul, div, cs, a, rotation, u8x8_d_vgafb_400x300_60Hz_20MHz, buf) {}
 U8G2_VGAFB_400X300_60Hz_20MHz_1::U8G2_VGAFB_400X300_60Hz_20MHz_1(const u8g2_cb_t *rotation, vgafb_t* vgafb)
-	: U8G2_VGAFB(vgafb, rotation, u8x8_d_vgafb_400x300_60Hz_20MHz, buf)
-{}
+	: U8G2_VGAFB(vgafb, rotation, u8x8_d_vgafb_400x300_60Hz_20MHz, buf) {}
 
 U8G2_VGAFB_256X256_60Hz_20MHz_1::U8G2_VGAFB_256X256_60Hz_20MHz_1(const u8g2_cb_t *rotation, uint8_t mul, uint8_t div, uint8_t cs, uint8_t a)
-	: U8G2_VGAFB(mul, div, cs, a, rotation, u8x8_d_vgafb_256x256_60Hz_20MHz, buf)
-{}
+	: U8G2_VGAFB(mul, div, cs, a, rotation, u8x8_d_vgafb_256x256_60Hz_20MHz, buf) {}
 U8G2_VGAFB_256X256_60Hz_20MHz_1::U8G2_VGAFB_256X256_60Hz_20MHz_1(const u8g2_cb_t *rotation, vgafb_t* vgafb)
-	: U8G2_VGAFB(vgafb, rotation, u8x8_d_vgafb_256x256_60Hz_20MHz, buf)
-{}
+	: U8G2_VGAFB(vgafb, rotation, u8x8_d_vgafb_256x256_60Hz_20MHz, buf) {}
