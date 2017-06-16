@@ -67,9 +67,6 @@ public:
 	
 	void ClearLine(uint16_t line);
 
-	void SetPixel(uint16_t x, uint16_t y, uint8_t pixel);
-	uint8_t GetPixel(uint16_t x, uint16_t y);
-
 	void BlitAlignedBytes(uint_vgafb_t offset, uint8_t* bytes, uint8_t byteCount, uint8_t startSkipBits, uint8_t endSkipBits, byte blit);
 	void BlitBits(uint_vgafb_t screenOffset, uint8_t screenBitOffset, uint8_t* line, uint8_t lineBitOffset, uint8_t bitCount, byte blit);
 	void Blit(uint8_t* bitmap, int16_t sx, int16_t sy, int16_t w, int16_t h, uint8_t blit);

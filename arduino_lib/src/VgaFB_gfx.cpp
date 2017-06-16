@@ -77,41 +77,18 @@ void VgaFB_GFX::clearDisplay()
 
 void VgaFB_GFX::drawPixel(int16_t x, int16_t y, uint16_t color)
 {
-	setPixel(x, y, color ? 0xFF : 0);
+	VgaFB_SetPixel(vgafb, x, y, color ? 1 : 0);
 }
 void VgaFB_GFX::setPixel(int16_t x, int16_t y, uint8_t pixel)
 {
-	// XXX this method is duplicate of VgaFB::SetPixel
-	if (y < 0 || y >= vgafb->vVisibleScaled || x < 0 || x >= vgafb->mode.hVisible)
-		return;
-
-	uint_vgafb_t offset = vgafb->vmemFirstPixelOffset + y * vgafb->vmemScaledStride + ((uint16_t)x >> 3);
-	uint8_t bitOffset = 7 - (x & 0x07);
-	uint8_t mask = 1 << bitOffset;
-
-	uint8_t read;
-	VgaFB_Read(vgafb, offset, &read, 1);
-	uint8_t write = (read & ~mask) | ((pixel ? 0xFF : 0) & mask);
-
-	uint8_t s = vgafb->mode.scanlineHeight;
-	while (s--) {
-		VgaFB_Write(vgafb, offset, &write, 1);
-		offset += vgafb->vmemStride;
-	}
+	VgaFB_SetPixel(vgafb, x, y, pixel);
 }
+
 uint8_t VgaFB_GFX::getPixel(int16_t x, int16_t y)
 {
-	// XXX this method is duplicate of VgaFB::SetPixel
-	if (y < 0 || y >= vgafb->vVisibleScaled || x < 0 || x >= vgafb->mode.hVisible)
-		return 0;
-
-	uint_vgafb_t offset = vgafb->vmemFirstPixelOffset + y * vgafb->vmemScaledStride + ((uint16_t)x >> 3);
-
-	uint8_t read;
-	VgaFB_Read(vgafb, offset, &read, 1);
-
-	return (read & (0x080 >> (x & 0x07))) ? 1 : 0;
+	return VgaFB_GetPixel(vgafb, x, y);
 }
+
 void VgaFB_GFX::scroll(int16_t lines)
 {
 	return VgaFB_Scroll(vgafb, lines);

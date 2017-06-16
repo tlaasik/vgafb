@@ -226,6 +226,23 @@ void VgaFB_Write(vgafb_t* vgafb, uint_vgafb_t dst, uint8_t* buf, uint_vgafb_t cn
  */
 void VgaFB_Read(vgafb_t* vgafb, uint_vgafb_t src, uint8_t* buf, uint_vgafb_t cnt);
 
+/**
+ * Sets one pixel color (slow)
+ *
+ *  x, y:   coordinates (it's safe for these to be out of range)
+ *  pixel:  0 is black, anything else is white
+ */
+void VgaFB_SetPixel(vgafb_t* vgafb, uint16_t x, uint16_t y, uint8_t pixel);
+
+/**
+ * Gets one pixel color (slow)
+ *
+ *  x, y:   coordinates (it's safe for these to be out of range)
+ *
+ *  return: 0 if black, 1 if white. 0 if coordinates are out of range
+ */
+uint8_t VgaFB_GetPixel(vgafb_t* vgafb, uint16_t x, uint16_t y);
+
 
 /**
  * Predefined display modes. For details see vgafb_modes.cpp

@@ -63,37 +63,6 @@ void VgaFB::ClearLine(uint16_t line) {
 		return;
 	VgaFB_Write(&vgafb, vgafb.vmemFirstPixelOffset + line * vgafb.vmemScaledStride, 0, vgafb.vmemScaledStride);
 }
-void VgaFB::SetPixel(uint16_t x, uint16_t y, uint8_t pixel)
-{
-	if (y < 0 || y >= vgafb.vVisibleScaled || x < 0 || x >= vgafb.mode.hVisible)
-		return;
-
-	uint_vgafb_t offset = vgafb.vmemFirstPixelOffset + y * vgafb.vmemScaledStride + ((uint16_t)x >> 3);
-	uint8_t bitOffset = 7 - (x & 0x07);
-	uint8_t mask = 1 << bitOffset;
-
-	uint8_t read;
-	VgaFB_Read(&vgafb, offset, &read, 1);
-	uint8_t write = (read & ~mask) | ((pixel ? 0xFF : 0) & mask);
-
-	uint8_t s = vgafb.mode.scanlineHeight;
-	while (s--) {
-		VgaFB_Write(&vgafb, offset, &write, 1);
-		offset += vgafb.vmemStride;
-	}
-}
-uint8_t VgaFB::GetPixel(uint16_t x, uint16_t y)
-{
-	if (y < 0 || y >= vgafb.vVisibleScaled || x < 0 || x >= vgafb.mode.hVisible)
-		return 0;
-
-	uint_vgafb_t offset = vgafb.vmemFirstPixelOffset + y * vgafb.vmemScaledStride + ((uint16_t)x >> 3);
-
-	uint8_t read;
-	VgaFB_Read(&vgafb, offset, &read, 1);
-
-	return (read & (0x080 >> (x & 0x07))) ? 1 : 0;
-}
 
 
 // arg restrictions (if not followed buffer overrun will occur):

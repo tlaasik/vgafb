@@ -408,3 +408,36 @@ void VgaFB_Read(vgafb_t* vgafb, uint_vgafb_t src, uint8_t* buf, uint_vgafb_t cnt
 		addr += c;
 	}
 }
+
+
+void VgaFB_SetPixel(vgafb_t* vgafb, uint16_t x, uint16_t y, uint8_t pixel)
+{
+	if (y >= vgafb->vVisibleScaled || x >= vgafb->mode.hVisible)
+		return;
+
+	uint_vgafb_t offset = vgafb->vmemFirstPixelOffset + y * vgafb->vmemScaledStride + ((uint16_t)x >> 3);
+	uint8_t bitOffset = 7 - (x & 0x07);
+	uint8_t mask = 1 << bitOffset;
+
+	uint8_t read;
+	VgaFB_Read(vgafb, offset, &read, 1);
+	uint8_t write = (read & ~mask) | ((pixel ? 0xFF : 0) & mask);
+
+	uint8_t s = vgafb->mode.scanlineHeight;
+	while (s--) {
+		VgaFB_Write(vgafb, offset, &write, 1);
+		offset += vgafb->vmemStride;
+	}
+}
+uint8_t VgaFB_GetPixel(vgafb_t* vgafb, uint16_t x, uint16_t y)
+{
+	if (y >= vgafb->vVisibleScaled || x >= vgafb->mode.hVisible)
+		return 0;
+
+	uint_vgafb_t offset = vgafb->vmemFirstPixelOffset + y * vgafb->vmemScaledStride + ((uint16_t)x >> 3);
+
+	uint8_t read;
+	VgaFB_Read(vgafb, offset, &read, 1);
+
+	return (read & (0x080 >> (x & 0x07))) ? 1 : 0;
+}
