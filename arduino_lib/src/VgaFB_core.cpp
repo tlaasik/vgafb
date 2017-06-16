@@ -32,17 +32,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 //not using TimerHelpers.h by Nick Gammon any more (http://www.gammon.com.au/forum/?id=11504)
 
 
-#if VGAFB_VRAM_ADDR_LENGTH == 2
-#define SPI_SEND_CMD_AND_ADDR(cmd, addr) \
-	{ SPI.transfer(cmd); SPI.transfer16((uint16_t)addr); }
-#elif VGAFB_VRAM_ADDR_LENGTH == 3
-#define SPI_SEND_CMD_AND_ADDR(uint8_t cmd, uint_vgafb_t addr) \
-	{ SPI.transfer(cmd); SPI.transfer((uint16_t)(addr >> 16)); SPI.transfer16((uint16_t)addr); }
-#elif VGAFB_VRAM_ADDR_LENGTH == 4
-#define SPI_SEND_CMD_AND_ADDR(uint8_t cmd, uint_vgafb_t addr) \
-	{ SPI.transfer(cmd); SPI.transfer16((uint16_t)(addr >> 16)); SPI.transfer16((uint16_t)addr); }
-#endif
-
 #define SET_PORT_PIN(port, pin_mask) (*(port) |= (pin_mask))
 #define CLR_PORT_PIN(port, pin_mask) (*(port) &= ~(pin_mask))
 #define VGAFB_START_CRIT() uint8_t _sreg = SREG; noInterrupts()
@@ -78,7 +67,7 @@ ISR(TIMER1_OVF_vect)
 
 	// start READ cmd
 	CLR_PORT_PIN(cur_vgafb->cs_port, cur_vgafb->cs_pin_mask);
-	SPI_SEND_CMD_AND_ADDR(0x03, cur_vgafb->vmemPtr); // READ
+	VRAM_READ_START(cur_vgafb->vmemPtr);
 
 	// set mode to PXOUT. Pixels start clocking out after vsync edge.
 	// this disconnects video hw from SPI so we can end transaction
@@ -284,10 +273,10 @@ void VgaFB_DisplayEnabled(vgafb_t *vgafb, bool enabled)
 void VgaFB_Clear(vgafb_t* vgafb)
 {
 	VgaFB_StartTranscation(vgafb);
-	SPI_SEND_CMD_AND_ADDR(0x02, vgafb->vmemPtr); // WRITE
+	VRAM_WRITE_START(vgafb->vmemPtr);
 	uint_vgafb_t wordsToErase = (vgafb->vmemLastPixelOffset >> 1) + 1;// vgafb->vTotal * vgafb->vmemStride / 2;
 	while (wordsToErase--)
-		SPI.transfer16(0);
+		VRAM_TRANSFER_2_ZEROS();
 	SET_PORT_PIN(vgafb->cs_port, vgafb->cs_pin_mask);
 
 	vgafb->vmemLastPixelOffset = 0;
@@ -371,8 +360,8 @@ void VgaFB_Write(vgafb_t* vgafb, uint_vgafb_t dst, uint8_t* buf, uint_vgafb_t cn
 		}
 		
 		VgaFB_StartTranscation(vgafb);
-		SPI_SEND_CMD_AND_ADDR(0x02, vgafb->vmemPtr + dst); // WRITE
-		SPI.transfer(b, c);
+		VRAM_WRITE_START(vgafb->vmemPtr + dst);
+		VRAM_TRANSFER(b, c);
 		VgaFB_EndTransaction(vgafb);
 
 		if (mayPushLastPixel) {
@@ -400,8 +389,8 @@ void VgaFB_Read(vgafb_t* vgafb, uint_vgafb_t src, uint8_t* buf, uint_vgafb_t cnt
 		uint8_t c = cnt > VGAFB_MAX_SPI_TRANSACTION_BYTES ? VGAFB_MAX_SPI_TRANSACTION_BYTES : cnt;
 
 		VgaFB_StartTranscation(vgafb);
-		SPI_SEND_CMD_AND_ADDR(0x03, addr); // READ
-		SPI.transfer(buf, c);
+		VRAM_READ_START(addr);
+		VRAM_TRANSFER(buf, c);
 		VgaFB_EndTransaction(vgafb);
 
 		cnt -= c;

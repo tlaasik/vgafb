@@ -51,12 +51,6 @@ VgaFB_End(&v);
 // ================== configurable part ==================
 
 /**
- * Set it to how many address bytes the memory chip needs. It's usually 2 for <=64kB chips, but
- * can be 3 or 4 for larger chips. It also defines internal vram pointer type (uint16_t for 2)
- */
-#define VGAFB_VRAM_ADDR_LENGTH				2
-
-/**
  * Define how much video memory there is. There are two cases:
  * # if VgaFB_Scroll is used then this MUST be >= memory chip size
  *   (otherwise scrolling may move some uncleared pixels into blanking scanlines)
@@ -73,6 +67,20 @@ VgaFB_End(&v);
 #define VGAFB_MAX_SPI_TRANSACTION_BYTES		8
 
 /**
+ * Set data type that's used for memory address calculations. It should be changed
+ * when VRAM chip is >64kB. Then probably VRAM access defines need to be updated too.
+ */
+#define uint_vgafb_t uint16_t
+
+/**
+ * VRAM access defines. Change it if the particular chip used needs extra address bytes or timing
+ */
+#define VRAM_READ_START(addr)   { SPI.transfer(0x03); SPI.transfer16((uint16_t)(addr)); }
+#define VRAM_WRITE_START(addr)  { SPI.transfer(0x02); SPI.transfer16((uint16_t)(addr)); }
+#define VRAM_TRANSFER(buf, cnt) SPI.transfer(buf, cnt); /* both reads and writes to buf */
+#define VRAM_TRANSFER_2_ZEROS() SPI.transfer16(0);
+
+/**
  * Comment this block in to configure 2 pins for ISR and SPI transaction timing measurements.
  * These are Atmega 328 PORTD bit numbers (0..7), not Arduino pin numbers
  */
@@ -87,16 +95,6 @@ VgaFB_End(&v);
 #define VGAFB_FIXED_PIN_HSYNC		5
 #define VGAFB_FIXED_PIN_VSYNC		10
 
-#if VGAFB_VRAM_ADDR_LENGTH == 2
-#define uint_vgafb_t uint16_t
-#elif VGAFB_VRAM_ADDR_LENGTH == 3
-// if there was uint24_t then we'd use it
-#define uint_vgafb_t uint32_t
-#elif VGAFB_VRAM_ADDR_LENGTH == 4
-#define uint_vgafb_t uint32_t
-#else
-#error VGAFB_VRAM_ADDR_LENGTH must be 2, 3 or 4
-#endif
 
 /**
  * Display mode flags. Can be bitwise ORed.
