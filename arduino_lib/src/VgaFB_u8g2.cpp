@@ -103,11 +103,9 @@ static uint8_t u8x8_d_vgafb_generic(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, 
 			}
 		}
 		break;
-		/* TODO disable syncs and pixel clocking?
-		case U8X8_MSG_DISPLAY_SET_POWER_SAVE:
-		// displayOn = arg_int==0;
+	case U8X8_MSG_DISPLAY_SET_POWER_SAVE:
+		VgaFB_DisplayEnabled(vgafb, arg_int == 0);
 		break;
-		*/
 	default:
 		return 0;
 	}
