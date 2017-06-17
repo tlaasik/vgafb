@@ -146,6 +146,37 @@ static void VgaFB_EndTransaction(vgafb_t* vgafb)
 	SPI.endTransaction();
 }
 
+
+/**
+* Calling this will read VRAM and adjust vgafb->vmemLastPixelOffset.
+* Large vmemLastPixelOffset values will significantly slow down VRAM access writes
+*/
+static void VgaFB_Trim(vgafb_t* vgafb)
+{
+	uint8_t b[VGAFB_MAX_SPI_TRANSACTION_BYTES];
+
+	// first read one byte back, because it's likely that it won't be zero
+	uint8_t bytesToReadBack = 1;
+	while (vgafb->vmemLastPixelOffset >= bytesToReadBack)
+	{
+		VgaFB_StartTranscation(vgafb);
+		VRAM_READ_START(vgafb->vmemPtr + vgafb->vmemLastPixelOffset - bytesToReadBack);
+		VRAM_TRANSFER(b, bytesToReadBack);
+		VgaFB_EndTransaction(vgafb);
+
+		while (bytesToReadBack--)
+		{
+			if (b[bytesToReadBack] != 0)
+				return;
+			vgafb->vmemLastPixelOffset--;
+		}
+
+		// tell it to read back a block, because it may be that the screen is mostly
+		// black and a few white pixels on bottom screen part were white
+		bytesToReadBack = VGAFB_MAX_SPI_TRANSACTION_BYTES;
+	}
+}
+
 void VgaFB_ConfigBoard(vgafb_t* vgafb, uint8_t mul, uint8_t div, uint8_t cs_pin, uint8_t ab_pin)
 {
 	uint8_t cs_port = digitalPinToPort(cs_pin);
@@ -327,11 +358,11 @@ void VgaFB_Scroll(vgafb_t* vgafb, int16_t delta)
 	}
 }
 
-// special case: if buf is null (0) then zeros are written
 void VgaFB_Write(vgafb_t* vgafb, uint_vgafb_t dst, uint8_t* buf, uint_vgafb_t cnt)
 {
+	uint_vgafb_t prevVmemLastPixelOffset = vgafb->vmemLastPixelOffset;
 	bool mayPushLastPixel = buf != 0 && dst + cnt > vgafb->vmemLastPixelOffset;
-
+	
 	uint8_t b[VGAFB_MAX_SPI_TRANSACTION_BYTES];
 	while (cnt > 0)
 	{
@@ -366,6 +397,11 @@ void VgaFB_Write(vgafb_t* vgafb, uint_vgafb_t dst, uint8_t* buf, uint_vgafb_t cn
 		if(buf)
 			buf += c;
 	}
+
+	// if we're wrote over vram region where lastPixelOffset was maybe we can adjust vmemLastPixelOffset
+	// (in addition we could check here if buf contains non-zero bytes by it's probably not worth wasting program space)
+	if (dst <= prevVmemLastPixelOffset && dst + cnt >= prevVmemLastPixelOffset)
+		VgaFB_Trim(vgafb);
 }
 
 void VgaFB_Read(vgafb_t* vgafb, uint_vgafb_t src, uint8_t* buf, uint_vgafb_t cnt)

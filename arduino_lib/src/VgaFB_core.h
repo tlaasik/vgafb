@@ -206,7 +206,7 @@ void VgaFB_Scroll(vgafb_t* vgafb, int16_t delta);
  *   uint_vgafb_t pixel_offset = vgafb->vmemFirstPixelOffset + x + y * vgafb->vmemScaledStride; 
  * where x=0..320/8-1 and y=0..240-1
  *
- *   dst: VRAM offset (pointer)
+ *   dst: VRAM offset (pointer). If null pointer (void*)0 then zeros are written
  *   buf: local buffer
  *   cnt: byte count to be written
  */
