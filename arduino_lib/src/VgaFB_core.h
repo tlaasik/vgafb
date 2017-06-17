@@ -78,7 +78,6 @@ VgaFB_End(&v);
 #define VRAM_READ_START(addr)   { SPI.transfer(0x03); SPI.transfer16((uint16_t)(addr)); }
 #define VRAM_WRITE_START(addr)  { SPI.transfer(0x02); SPI.transfer16((uint16_t)(addr)); }
 #define VRAM_TRANSFER(buf, cnt) SPI.transfer(buf, cnt); /* both reads and writes to buf */
-#define VRAM_TRANSFER_2_ZEROS() SPI.transfer16(0);
 
 /**
  * Comment this block in to configure 2 pins for ISR and SPI transaction timing measurements.

@@ -186,6 +186,8 @@ bool VgaFB_Begin(vgafb_t* vgafb, vgamode_t mode)
 	//if ((hTotal & 0x07) != 0)
 	//	return false;
 
+	vgafb->enabled = false;
+
 	vgafb->mode = mode;
 	
 	vgafb->vVisibleScaled = mode.vVisible / vgafb->mode.scanlineHeight;
@@ -206,7 +208,6 @@ bool VgaFB_Begin(vgafb_t* vgafb, vgamode_t mode)
 	vgafb->sramSpiSettings = SPISettings(20000000, MSBFIRST, SPI_MODE0);
 
 	// clear all SRAM (smaller chips will be cleared multiple times, but it doesn't break anything)
-	vgafb->enabled = false;
 	VgaFB_Write(vgafb, 0, 0, VGAFB_VRAM_SIZE - 1);
 	VgaFB_Write(vgafb, VGAFB_VRAM_SIZE - 1, 0, 1);
 	
@@ -272,25 +273,11 @@ void VgaFB_DisplayEnabled(vgafb_t *vgafb, bool enabled)
 
 void VgaFB_Clear(vgafb_t* vgafb)
 {
-	VgaFB_StartTranscation(vgafb);
-	VRAM_WRITE_START(vgafb->vmemPtr);
-	uint_vgafb_t wordsToErase = (vgafb->vmemLastPixelOffset >> 1) + 1;// vgafb->vTotal * vgafb->vmemStride / 2;
-	while (wordsToErase--)
-		VRAM_TRANSFER_2_ZEROS();
-	SET_PORT_PIN(vgafb->cs_port, vgafb->cs_pin_mask);
-
+	bool prevEnabled = vgafb->enabled;
+	vgafb->enabled = false;
+	VgaFB_Write(vgafb, 0, 0, vgafb->vmemLastPixelOffset + 1);
 	vgafb->vmemLastPixelOffset = 0;
-
-	// We're about to end a very long SPI transaction that has grossly violated
-	// maximum time we are allowed to hold back Timer1 overflow ISR. In fact
-	// Timer1 has overflown multiple times. In this case this is all OK, because
-	// while we were holding Timer1 ISR back (that starts clocking pixels out)
-	// the screen was displaying black and the end result of calling this function
-	// is that all pixels in VRAM are black too. To cleanly end this SPI transaction
-	// Timer1 overflow flag must be cleared.
-	TIFR1 = _BV(TOV1);
-
-	VgaFB_EndTransaction(vgafb);
+	vgafb->enabled = prevEnabled;
 }
 
 // scanline vTotal (not scaled line vTotalScaled)
