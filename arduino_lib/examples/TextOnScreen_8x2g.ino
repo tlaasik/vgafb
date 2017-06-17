@@ -1,8 +1,10 @@
-#include <U8x8lib.h>
-#include <SPI.h>
-#include <VgaFB_u8x8.h>
 
-U8G2_VGAFB_400X300_60Hz_20MHz_GENERIC_1_VGAFBBUS u8g2(U8G2_R0, /*mul/div=*/5, 4, /* cs=*/ 4, /* a=*/ 9);
+#include <SPI.h>
+#include <U8x8lib.h>
+#include <VgaFB_core.h>
+#include <VgaFB_u8g2.h>
+
+U8G2_VGAFB_400X300_60Hz_20MHz_1 u8g2(U8G2_R0, /*mul/div=*/5, 4, /* cs=*/ 4, /* a=*/ 9);
 
 // Generate 8MHz that will be multiplied by 2.5 (set by jumpers) to get 20MHz pixel clock.
 // Since Arduino itself runs at 16MHz we told in u8g2 constructor that the multiplier is 1.25

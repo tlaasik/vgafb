@@ -26,7 +26,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 -------------------------------------------------------------------------------
 */
+#include <Adafruit_GFX.h>
 #include "VgaFB_core.h"
+#include "VgaFB.h"
 #include "VgaFB_gfx.h"
 
 VgaFB_GFX::VgaFB_GFX(uint8_t mul, uint8_t div, uint8_t cs_pin, uint8_t ab_pin) : Adafruit_GFX(0, 0)
