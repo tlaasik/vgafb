@@ -2,3 +2,4 @@
 /hw/*.kicad_prl
 /hw/vga-backups
 /hw/rescue-backup
+/hw/fab/*.*

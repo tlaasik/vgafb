@@ -1597,8 +1597,8 @@
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 3d57559b-7e02-4d70-b0c9-a86ba672ab60)
   )
-  (text "TODO test if adding some small\ncapacitance like 47pF in parallel\nwith D1 reduces ringing caused\nby impedance mismatch.\n(Trying to avoid T pad attenuator)"
-    (at 146.05 80.01 0)
+  (text "TODO test R6=220ohm together with\na resistor of 100ohm in parallel with D1.\nTODO test if adding some small\ncapacitance like 47pF in parallel\nwith D1 reduces ringing caused\nby impedance mismatch."
+    (at 144.78 82.55 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid b336d77d-026a-4545-900f-066ed714ba53)
   )
