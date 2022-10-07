@@ -368,10 +368,36 @@ void U8G2_VGAFB::begin() {
 	clearDisplay();
 	setPowerSave(0);
 }
+void U8G2_VGAFB::end() {
+	clearBuffer();
+	// TODO should we do more U8G2 cleanup?
+	VgaFB_End(vgafb);
+}
+void U8G2_VGAFB::enable() {
+	VgaFB_DisplayEnabled(vgafb, true);
+}
+void U8G2_VGAFB::disable() {
+	VgaFB_DisplayEnabled(vgafb, false);
+}
 void U8G2_VGAFB::clear() {
 	home();
 	clearDisplay();
 	clearBuffer();
+}
+void U8G2_VGAFB::clearLine(u8g2_uint_t line) {
+	if (line >= vgafb->vVisibleScaled)
+		return;
+	VgaFB_Write(vgafb, vgafb->vmemFirstPixelOffset + line * vgafb->vmemScaledStride, 0, vgafb->vmemScaledStride);
+}
+void U8G2_VGAFB::scroll(int16_t delta) {
+	VgaFB_Scroll(vgafb, delta);
+}
+
+void U8G2_VGAFB::setPixel(u8g2_uint_t x, u8g2_uint_t y, uint8_t pixel) {
+	VgaFB_SetPixel(vgafb, x, y, pixel);
+}
+uint8_t U8G2_VGAFB::getPixel(u8g2_uint_t x, u8g2_uint_t y) {
+	return VgaFB_GetPixel(vgafb, x, y);
 }
 
 

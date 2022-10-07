@@ -7,7 +7,7 @@ https://github.com/tlaasik/vgafb/
 
 -------------------------------------------------------------------------------
 
-Copyright (c) 2017, toomas.laasik@gmail.com
+Copyright (c) 2022, toomas.laasik@gmail.com
 All rights reserved.
 
 This library is free software; you can redistribute it and/or
@@ -36,17 +36,12 @@ VgaFB::VgaFB(uint8_t mul, uint8_t div, uint8_t cs_pin, uint8_t ab_pin) {
 	VgaFB_ConfigBoard(vgafb, mul, div, cs_pin, ab_pin);
 }
 VgaFB::VgaFB(vgafb_t* vgafb) {
-	setVgaFB(vgafb);
-}
-VgaFB::VgaFB() {
+	this->vgafb = vgafb;
+	ownsVgafb = false;
 }
 VgaFB::~VgaFB() {
 	if (ownsVgafb)
 		delete vgafb;
-}
-void VgaFB::setVgaFB(vgafb_t* vgafb) {
-	this->vgafb = vgafb;
-	ownsVgafb = false;
 }
 vgafb_t* VgaFB::getVgaFB() {
 	return vgafb;

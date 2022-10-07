@@ -7,7 +7,7 @@ https://github.com/tlaasik/vgafb/
 
 -------------------------------------------------------------------------------
 
-Copyright (c) 2017, toomas.laasik@gmail.com
+Copyright (c) 2022, toomas.laasik@gmail.com
 All rights reserved.
 
 This library is free software; you can redistribute it and/or
@@ -58,9 +58,7 @@ public:
 
 	VgaFB(uint8_t mul, uint8_t div, uint8_t cs_pin, uint8_t ab_pin);
 	VgaFB(vgafb_t* vgafb);
-	VgaFB(); // this is only useful if setVgaFB() is called later
 	~VgaFB();
-	void setVgaFB(vgafb_t* vgafb);
 	vgafb_t* getVgaFB();
 
 	void begin(vgamode_t mode);

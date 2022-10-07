@@ -80,10 +80,21 @@ public:
 	~U8G2_VGAFB();
 
 	vgafb_t* getVgaFB();
+	
 	void begin();
+	void end();
+
+	void enable();
+	void disable();
+	
 	void clearDisplay();
-	// needed to override this too or otherwise clear() would call base class clearDisplay() instead
+	
 	void clear();
+	void clearLine(u8g2_uint_t line);
+	void scroll(int16_t delta);
+	
+	void setPixel(u8g2_uint_t x, u8g2_uint_t y, uint8_t pixel);
+	uint8_t getPixel(u8g2_uint_t x, u8g2_uint_t y);
 };
 
 class U8G2_VGAFB_640X480_75Hz_32MHz_1 : public U8G2_VGAFB {

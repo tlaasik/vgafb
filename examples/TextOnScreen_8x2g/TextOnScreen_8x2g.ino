@@ -1,7 +1,5 @@
 
 #include <SPI.h>
-#include <U8x8lib.h>
-#include <VgaFB.h>
 #include <VgaFB_u8g2.h>
 
 #ifndef U8G2_16BIT
@@ -10,7 +8,6 @@
 
 // Create class instances
 U8G2_VGAFB_400X300_60Hz_20MHz_1 u8g2(U8G2_R0, /*mul/div=*/5, 4, /* cs=*/ 4, /* a=*/ 9);
-VgaFB vgafb;
 
 // Generate 8MHz that will be multiplied by 2.5 (set by jumpers) to get 20MHz pixel clock.
 // Since Arduino itself runs at 16MHz we told in u8g2 constructor that the multiplier is 1.25
@@ -24,7 +21,6 @@ void setupClockGen() {
 void setup() {
   setupClockGen();
   u8g2.begin();
-  vgafb.setVgaFB(u8g2.getVgaFB());
 }
 void loop()
 {
@@ -39,14 +35,14 @@ void loop()
     u8g2.drawFilledEllipse(100, 100, 90, 30);
   } while (u8g2.nextPage());
 
-  unsigned int w = vgafb.getWidth();
-  unsigned int h = vgafb.getHeight();
-  vgafb.setPixel(0, 0, 1);
-  vgafb.setPixel(w - 1, 0, 1);
-  vgafb.setPixel(w - 1, h - 1, 1);
-  vgafb.setPixel(0, h - 1, 1);
+  u8g2_uint_t w = u8g2.getWidth();
+  u8g2_uint_t h = u8g2.getHeight();
+  u8g2.setPixel(0, 0, 1);
+  u8g2.setPixel(w - 1, 0, 1);
+  u8g2.setPixel(w - 1, h - 1, 1);
+  u8g2.setPixel(0, h - 1, 1);
   
   _delay_ms(6000);
-  vgafb.scroll(300);
+  u8g2.scroll(300);
   _delay_ms(800);
 }
