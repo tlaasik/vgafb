@@ -35,11 +35,16 @@ VgaFB::VgaFB(uint8_t mul, uint8_t div, uint8_t cs_pin, uint8_t ab_pin) {
 	ownsVgafb = true;
 	VgaFB_ConfigBoard(vgafb, mul, div, cs_pin, ab_pin);
 }
+VgaFB::VgaFB(vgafb_t* vgafb) {
+	setVgaFB(vgafb);
+}
+VgaFB::VgaFB() {
+}
 VgaFB::~VgaFB() {
 	if (ownsVgafb)
 		delete vgafb;
 }
-VgaFB::VgaFB(vgafb_t* vgafb) {
+void VgaFB::setVgaFB(vgafb_t* vgafb) {
 	this->vgafb = vgafb;
 	ownsVgafb = false;
 }

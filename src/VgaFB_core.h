@@ -247,7 +247,7 @@ uint8_t VgaFB_GetPixel(vgafb_t* vgafb, uint16_t x, uint16_t y);
  * For each mode VRAM used is calculated here. Memory chip must be at least that big
  */
 extern vgamode_t vgamode_400x300_60Hz_20MHz;   // 41291 bytes
-extern vgamode_t vgamode_256x256_60Hz_20MHz;   // 41291 bytes
+extern vgamode_t vgamode_240x240_60Hz_20MHz;   // 32875 bytes
 extern vgamode_t vgamode_640x480_75Hz_32MHz;   // 53000 bytes
 extern vgamode_t vgamode_320x240_75Hz_16MHz;   // 26500 bytes
 extern vgamode_t vgamode_640x400_85Hz_32MHz;   // 46280 btyes

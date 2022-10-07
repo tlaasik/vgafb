@@ -63,10 +63,10 @@ public:
 	U8X8_VGAFB_400X300_60Hz_20MHz(uint8_t mul, uint8_t div, uint8_t cs, uint8_t a);
 	U8X8_VGAFB_400X300_60Hz_20MHz(vgafb_t* vgafb);
 };
-class U8X8_VGAFB_256X256_60Hz_20MHz : public U8X8_VGAFB {
+class U8X8_VGAFB_240X240_60Hz_20MHz : public U8X8_VGAFB {
 public:
-	U8X8_VGAFB_256X256_60Hz_20MHz(uint8_t mul, uint8_t div, uint8_t cs, uint8_t a);
-	U8X8_VGAFB_256X256_60Hz_20MHz(vgafb_t* vgafb);
+	U8X8_VGAFB_240X240_60Hz_20MHz(uint8_t mul, uint8_t div, uint8_t cs, uint8_t a);
+	U8X8_VGAFB_240X240_60Hz_20MHz(vgafb_t* vgafb);
 };
 
 class U8G2_VGAFB : public U8G2 {
@@ -102,12 +102,12 @@ public:
 	U8G2_VGAFB_400X300_60Hz_20MHz_1(const u8g2_cb_t *rotation, vgafb_t* vgafb);
 };
 
-class U8G2_VGAFB_256X256_60Hz_20MHz_1 : public U8G2_VGAFB {
+class U8G2_VGAFB_240X240_60Hz_20MHz_1 : public U8G2_VGAFB {
 private:
-	uint8_t buf[256];
+	uint8_t buf[240];
 public:
-	U8G2_VGAFB_256X256_60Hz_20MHz_1(const u8g2_cb_t *rotation, uint8_t mul, uint8_t div, uint8_t cs, uint8_t a);
-	U8G2_VGAFB_256X256_60Hz_20MHz_1(const u8g2_cb_t *rotation, vgafb_t* vgafb);
+	U8G2_VGAFB_240X240_60Hz_20MHz_1(const u8g2_cb_t *rotation, uint8_t mul, uint8_t div, uint8_t cs, uint8_t a);
+	U8G2_VGAFB_240X240_60Hz_20MHz_1(const u8g2_cb_t *rotation, vgafb_t* vgafb);
 };
 
 #endif

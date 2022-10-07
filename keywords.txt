@@ -1,0 +1,41 @@
+
+# Classes
+
+vgafb	KEYWORD1
+
+
+# Methods
+
+setVgaFB	KEYWORD2
+getVgaFB	KEYWORD2
+
+begin	KEYWORD2
+end	KEYWORD2
+
+enable	KEYWORD2
+disable	KEYWORD2
+
+clear	KEYWORD2
+clearLine	KEYWORD2
+scroll	KEYWORD2
+
+getWidth	KEYWORD2
+getHeight	KEYWORD2
+
+setPixel	KEYWORD2
+getPixel	KEYWORD2
+
+blit	KEYWORD2
+
+
+# Constants
+
+vgamode_400x300_60Hz_20MHz	LITERAL1
+vgamode_240x240_60Hz_20MHz	LITERAL1
+vgamode_640x480_75Hz_32MHz	LITERAL1
+vgamode_320x240_75Hz_16MHz	LITERAL1
+vgamode_640x400_85Hz_32MHz	LITERAL1
+vgamode_320x200_85Hz_16MHz	LITERAL1
+vgamode_640x480_60Hz_25MHz	LITERAL1
+vgamode_320x240_60Hz_12_6MHz	LITERAL1
+vgamode_160x120_60Hz_6_3MHz	LITERAL1

@@ -34,7 +34,7 @@ http://martin.hinner.info/vga/timing.html
 
 // VESA 800x600@60Hz  hsync:37.9kHz pxclk:40.0MHz  800 840 968 1056  600 601 605 628  +hsync +vsync
 vgamode_t vgamode_400x300_60Hz_20MHz = { 400, 420, 484, 526,  600, 601, 605, 628,  2, VGAFLAG_NONE };
-vgamode_t vgamode_256x256_60Hz_20MHz = { 256, 352, 416, 526,  512, 601, 605, 628,  2, VGAFLAG_NONE };
+vgamode_t vgamode_240x240_60Hz_20MHz = { 240, 344, 408, 526,  480, 601, 605, 628,  2, VGAFLAG_NONE };
 
 // VESA 640x480@75Hz  hsync:37.5kHz pxclk:31.5MHz  640 656 720 840  480 481 484 500  -hsync -vsync
 // modified hTotal because 840/16=52.5. pxclk is not exact, this mode should ideally use 31.5MHz
