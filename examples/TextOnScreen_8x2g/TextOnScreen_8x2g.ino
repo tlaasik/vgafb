@@ -33,15 +33,17 @@ void loop()
     u8g2.drawStr(130, 280, "Using u8g2 for rendering text");
     u8g2.drawStr(0, 40, "https://github.com/tlaasik/vgafb");
     u8g2.drawFilledEllipse(100, 100, 90, 30);
+
+    u8g2_uint_t w = u8g2.getWidth();
+    u8g2_uint_t h = u8g2.getHeight();
+    u8g2.setDrawColor(1);
+    u8g2.drawPixel(0, 0);
+    u8g2.drawPixel(w - 1, 0);
+    u8g2.drawPixel(w - 1, h - 1);
+    u8g2.drawPixel(0, h - 1);
+      
   } while (u8g2.nextPage());
 
-  u8g2_uint_t w = u8g2.getWidth();
-  u8g2_uint_t h = u8g2.getHeight();
-  u8g2.setPixel(0, 0, 1);
-  u8g2.setPixel(w - 1, 0, 1);
-  u8g2.setPixel(w - 1, h - 1, 1);
-  u8g2.setPixel(0, h - 1, 1);
-  
   _delay_ms(6000);
   u8g2.scroll(300);
   _delay_ms(800);

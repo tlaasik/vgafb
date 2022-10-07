@@ -78,41 +78,6 @@ public:
 	uint8_t getPixel(int16_t x, int16_t y);
 	
 	void blit(uint8_t* bitmap, int16_t sx, int16_t sy, int16_t w, int16_t h, blitmode_t blit);
-
-	//void setFont(const uint8_t *font_8x8)
-	//void drawGlyph(uint8_t x, uint8_t y, uint8_t encoding)
-	//void drawString(uint8_t x, uint8_t y, const char *s)
 };
 
 #endif
-
-
-/*DFBResult Blit (
-  	IDirectFBSurface 	 	* 	thiz,
-  	IDirectFBSurface 	 	* 	source,
-  	const DFBRectangle 	 	* 	source_rect,
-  	int 	 		x,
-  	int 	 		y
-);
-Pass a NULL rectangle to use the whole source surface. Source may be the same surface.
-
-DFBResult Write (
-IDirectFBSurface 	 	* 	thiz,
-const DFBRectangle 	 	* 	rect,
-const void 	 	* 	ptr,
-int 	 		pitch
-);
-rect defines the area inside the surface.
-ptr and pitch specify the source.
-The format of the surface and the source data must be the same.
-
-DFBResult Read (
-IDirectFBSurface 	 	* 	thiz,
-const DFBRectangle 	 	* 	rect,
-void 	 	* 	ptr,
-int 	 		pitch
-);
-rect defines the area inside the surface to be read.
-ptr and pitch specify the destination.
-The destination data will have the same format as the surface.
-*/

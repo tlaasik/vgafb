@@ -84,16 +84,14 @@ public:
 	void begin();
 	void end();
 
-	void enable();
-	void disable();
+	// instead of enable() and disable(), call u8g2.setPowerSave, u8g2.display or u8g2.noDisplay
 	
 	void clearDisplay();
-	
 	void clear();
 	void clearLine(u8g2_uint_t line);
 	void scroll(int16_t delta);
 	
-	void setPixel(u8g2_uint_t x, u8g2_uint_t y, uint8_t pixel);
+	// instead of setPixel, use u8g2.drawPixel
 	uint8_t getPixel(u8g2_uint_t x, u8g2_uint_t y);
 };
 
